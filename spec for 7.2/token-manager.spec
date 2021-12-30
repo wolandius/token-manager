@@ -3,7 +3,7 @@
 #
 
 Name:        token-manager
-Version:     1.5
+Version:     1.6
 Release:     1%{dist}.2
 
 BuildArch:   noarch
@@ -65,6 +65,9 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/token-manager.de
 %{_datadir}/doc/%{name}/README.md
 
 %changelog
+* Thu Dec 30 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.6
+- added function for install cert to container
+
 * Thu Dec 23 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.5
 - fix in serial = int(output[:11].decode('utf-8').replace(' ', ''), 16)
 - added hand choose arch for debugmode

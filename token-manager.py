@@ -45,7 +45,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, Pango
 from datetime import datetime
 
-VERSION = "1.5"
+VERSION = "1.6"
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help":
@@ -871,6 +871,7 @@ elif len(sys.argv) > 2:
     --debug-output --aarch64 пробный вызов основных функций утилиты для архитектуры ;
     --debug-output --e2k64 пробный вызов основных функций утилиты для архитектуры e2k64;""")
     exit(-1)
+
 class MainMenu(Gtk.MenuBar):
     def __init__(self):
         super(MainMenu, self).__init__()
@@ -885,17 +886,22 @@ class MainMenu(Gtk.MenuBar):
 
         self.install_root_certs = Gtk.MenuItem(label="_Установка корневых сертификатов", use_underline=True)
         self.install_crl = Gtk.MenuItem(label="_Установка списков отозванных сертификатов", use_underline=True)
+        self.write_cert_to_cont = Gtk.MenuItem(label="_Записать сертификат в контейнер", use_underline=True)
+
 
         self.view_root = Gtk.MenuItem(label="_Просмотр корневых сертификатов", use_underline=True)
         self.view_crl = Gtk.MenuItem(label="_Просмотр списков отозванных сертификатов", use_underline=True)
         self.usb_flash_container = Gtk.MenuItem(label="_Скопировать контейнер с usb-flash накопителя",
                                                 use_underline=True)
         self.token_container = Gtk.MenuItem(label="_Скопировать контейнер с токена", use_underline=True)
+
+
         file_menu.append(self.add_license)
         file_menu.append(self.view_license)
         file_menu.append(Gtk.SeparatorMenuItem.new())
         file_menu.append(self.install_root_certs)
         file_menu.append(self.install_crl)
+        file_menu.append(self.write_cert_to_cont)
         file_menu.append(Gtk.SeparatorMenuItem.new())
         file_menu.append(self.view_root)
         file_menu.append(self.view_crl)
@@ -956,6 +962,7 @@ class TokenUI(Gtk.Box):
         self.main_menu.install_crl.connect("activate", self.info_class.open_crl)
         self.main_menu.view_root.connect("activate", self.view_root)
         self.main_menu.view_crl.connect("activate", self.view_crl)
+        self.main_menu.write_cert_to_cont.connect("activate", self.write_cert)
         self.main_menu.actionAbout.connect("activate", self.about_iterate_self)
         self.main_menu.actionUsefull_install.connect("activate", self.usefull_install)
         self.main_menu.actionUsefull_commands.connect("activate", self.usefull_commands)
@@ -1103,6 +1110,48 @@ class TokenUI(Gtk.Box):
                 except Exception as e:
                     pass
         return True
+
+    def write_cert(self, widget):
+        win = InfoClass()
+        containers = Gtk.ListStore(str, bool)
+        # if self.tokens_for_import_container is not None:
+        if hasattr(self, 'tokens_for_import_container'):
+            for token in self.tokens_for_import_container:
+                temp_cont = get_token_certs(token[0])
+                for cont in temp_cont:
+                    if cont != 0:
+                        for c in cont:
+                            containers.append([c.split("|")[0].strip(), False])
+            if len(containers) > 0:
+                if win.install_container_from_token(containers):
+                    selected_containers = win.return_liststore_containers()
+                    name = ""
+                    selected = 0
+                    for cont in selected_containers:
+                        if cont[1]:
+                            selected += 1
+                    if selected > 1:
+                        win.print_simple_info(f"Выбрано {len(selected_containers)} контейнера(ов),\n"
+                                              "пожалуйста выберите лишь 1")
+                    elif selected == 1:
+                        for cont in selected_containers:
+                            if cont[1]:
+                                for c in cont:
+                                    print(c)
+                                # name = cont[0].split("\\")
+                                container = cont[0]
+                                if win.install_new_cert_to_container(container):
+                                    win.print_simple_info("Сертификат успешно скопирован в контейнер")
+                                else:
+                                    win.print_simple_info("Операция отменена пользователем")
+                else:
+                    win.print_simple_info("Операция отменена пользователем")
+            else:
+                win.print_simple_info("Токены не обнаружены")
+        else:
+            win.print_simple_info("Токены не обнаружены")
+
+
 
     def delete_cert(self, button):
         (model, iter) = self.cert_selection.get_selected()
@@ -2169,6 +2218,41 @@ class InfoClass(Gtk.Window):
                 dialog.destroy()
                 self.output_code_token = False
                 return False
+
+    def install_new_cert_to_container(self, container):
+        dialog = Gtk.FileChooserDialog(title="Выберите сертификат пользователя", parent=self,
+                                       action=Gtk.FileChooserAction.OPEN,
+                                       )
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                           Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        filter = Gtk.FileFilter()
+        filter.set_name("Сертификаты")
+        filter.add_mime_type("Сертификаты")
+        filter.add_pattern("*.cer")
+        dialog.add_filter(filter)
+        domain_name = os.popen("echo $USERNAME").readlines()[0].strip()
+        if "\\" in domain_name:
+            domain_name = domain_name.split("\\")[1]
+        elif "@" in domain_name:
+            domain_name = domain_name.split("@")[0]
+        find_name = os.popen(f"find /home/ -maxdepth 2 -name *{domain_name}*").readlines()
+        dialog.set_current_folder(f"{find_name[0].strip()}")
+        dialog.set_select_multiple(False)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            file_name = dialog.get_filename()
+            dialog.destroy()
+            if file_name:
+                output = os.popen(
+                    f"/opt/cprocsp/bin/{arch}/certmgr -inst -file '{file_name}' -cont '{container}' -inst_to_cont").readlines()
+                for l in output:
+                    if "[ErrorCode: 0x00000000]" in l:
+                        self.output_code_token = True
+                        return True
+        elif response == Gtk.ResponseType.CANCEL:
+            dialog.destroy()
+            self.output_code_token = False
+            return False
 
     def return_output_code_token(self):
         return self.output_code_token
