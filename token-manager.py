@@ -1545,13 +1545,14 @@ class TokenUI(Gtk.Box):
                 self.tokens_for_import_container.append([token, False])
 
     def get_token_serial(self, token):
+        # print(f"/usr/bin/opensc-tool --serial -r {token}")
         opensc_tool = subprocess.Popen(['/usr/bin/opensc-tool', '--serial', '-r', token], stdout=subprocess.PIPE)
         output = opensc_tool.communicate()[0]
+        # print(output.decode('utf-8'))
         try:
-            serial = str(int(''.join(output.decode('utf-8').split(' ')[:-1]), 16))
-            if len(serial) < 10:
-                while(len(serial) < 10):
-                    serial = "0"+str(serial)
+            # serial = '%010d' % (output[:11].replace(' ', ''), 16)
+            serial = int(output[:11].decode('utf-8').replace(' ', ''), 16)
+
         except:
             return u'б/н'
         if not opensc_tool.returncode:
