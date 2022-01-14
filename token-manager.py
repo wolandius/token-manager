@@ -1147,7 +1147,7 @@ class TokenUI(Gtk.Box):
                                 elif flag_cancel:
                                     win.print_simple_info("Операция отменена пользователем")
                                 else:
-                                    win.print_big_error(output, 400, 200)
+                                    win.print_big_error(output, 500, 300)
                 else:
                     win.print_simple_info("Операция отменена пользователем")
             else:
@@ -2226,7 +2226,7 @@ class InfoClass(Gtk.Window):
                                          modal=True, destroy_with_parent=True,
                                          message_type=Gtk.MessageType.QUESTION,
                                          buttons=Gtk.ButtonsType.OK_CANCEL)
-        dialogWindow.set_title("Выберите 1 хранилище для экспортира контейнера")
+        dialogWindow.set_title("Выберите 1 хранилище для экспортирования контейнера")
         dialogWindow.set_resizable(True)
         dialogBox = dialogWindow.get_content_area()
 
