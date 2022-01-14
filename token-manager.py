@@ -45,7 +45,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, Pango
 from datetime import datetime
 
-VERSION = "1.6"
+VERSION = "1.7"
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help":
@@ -57,9 +57,9 @@ if len(sys.argv) > 1:
     --e2k64         вызов e2k64 версии КриптоПро;
     --version       вывод номера версии token-manager; 
     --debug-output  пробный вызов основных функций утилиты;
-    --debug-output --amd64 пробный вызов основных функций утилиты для архитектуры ;
-    --debug-output --ia32 пробный вызов основных функций утилиты для архитектуры ;
-    --debug-output --aarch64 пробный вызов основных функций утилиты для архитектуры ;
+    --debug-output --amd64 пробный вызов основных функций утилиты для архитектуры amd64;
+    --debug-output --ia32 пробный вызов основных функций утилиты для архитектуры ia32;
+    --debug-output --aarch64 пробный вызов основных функций утилиты для архитектуры aarch64;
     --debug-output --e2k64 пробный вызов основных функций утилиты для архитектуры e2k64;""")
         exit(-1)
     elif sys.argv[1] == "--amd64":
@@ -140,10 +140,7 @@ class Debug:
         super(Debug, self).__init__()
         self.date = os.popen("echo $(date '+%F-%T')").readline().strip()
         self.name = f"/tmp/token-manager-{self.date}.txt"
-        # print(f"touch {self.name}")
         os.mknod(self.name)
-        print(self.name)
-        # os.system(f"touch {self.name}")
         os.system(f'echo -e "\e[1;32mПроцесс начался, пожалуйста, дождитесь его завершения.\033[0m"')
         print()
         os.system(f"""echo -e "\e[1;31mВнимание!
@@ -1137,14 +1134,11 @@ class TokenUI(Gtk.Box):
                     elif selected == 1:
                         for cont in selected_containers:
                             if cont[1]:
-                                for c in cont:
-                                    print(c)
-                                # name = cont[0].split("\\")
                                 container = cont[0]
                                 output = win.install_new_cert_to_container(container)
                                 flag_success = False
                                 flag_cancel = False
-                                if output == "sucess":
+                                if output == "success":
                                     flag_success = True
                                 elif output == "Операция отменена пользователем":
                                     flag_cancel = True
@@ -1153,8 +1147,7 @@ class TokenUI(Gtk.Box):
                                 elif flag_cancel:
                                     win.print_simple_info("Операция отменена пользователем")
                                 else:
-                                #     output = "\n".join(output)
-                                    win.print_big_error(output, 400, 300)
+                                    win.print_big_error(output, 400, 200)
                 else:
                     win.print_simple_info("Операция отменена пользователем")
             else:
@@ -1320,7 +1313,6 @@ class TokenUI(Gtk.Box):
         win = InfoClass()
         if win.install_HDIMAGE:
             containers = Gtk.ListStore(str, bool)
-            # if self.tokens_for_import_container is not None:
             if hasattr(self, 'tokens_for_import_container'):
                 for token in self.tokens_for_import_container:
                     temp_cont = get_token_certs(token[0])
@@ -1345,21 +1337,41 @@ class TokenUI(Gtk.Box):
                             if cont[1]:
                                 name = cont[0].split("\\")
                                 name = name[-1:][0]
-                                print(cont[0])
+                                out_name = win.enter_container_name(self, name)
+                                if out_name != "empty" and out_name != "canceled":
+                                    container_name = out_name
+                                    dest_stores = get_tokens()[0]
+                                    dest_stores.append("HDIMAGE")
+                                    list_dest = Gtk.ListStore(str, bool)
+                                    for store in dest_stores:
+                                        list_dest.append([store, False])
+                                    if win.choose_dest_stores(list_dest):
+                                        selected_dest = win.return_liststore_dest_stores()
+                                        selected_stores = 0
+                                        for row in selected_dest:
+                                            if row[1]:
+                                                selected_store = row[0]
+                                                selected_stores += 1
+                                        if selected_stores > 1:
+                                            win.print_error("Необходимо выбрать 1 хранилище\n"
+                                                            "для завершения экспортирования")
+                                        elif selected_stores == 1:
+                                            output = os.popen(
+                                                f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{cont[0]}' "
+                                                f"-contdest '\\\\.\\{selected_store}\\{container_name}' | iconv -f cp1251").readlines()
 
-                                out_name =  win.enter_container_name(self, name)
-                                if out_name == "empty":
-                                    win.print_error("Не введено имя")
+                                            if win.install_cert_from_or_to_container(
+                                                    f"\\\\.\\{selected_store}\\{container_name}", selected_store):
+                                                win.print_simple_info(
+                                                    "Контейнер успешно скопирован\nи связан с сертификатом")
+                                            else:
+                                                win.print_simple_info("Операция отменена пользователем")
+                                    else:
+                                        win.print_simple_info("Операция отменена пользователем")
                                 elif out_name == "canceled":
                                     win.print_simple_info("Операция отменена пользователем")
-                                else:
-                                    container_name = out_name
-                                output = os.popen(f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{cont[0]}' "
-                                                  f"-contdest '\\\\.\\HDIMAGE\\{container_name}'").readlines()
-                                if win.install_cert_from_or_to_container(f"\\\\.\\HDIMAGE\\{name}"):
-                                    win.print_simple_info("Контейнер успешно скопирован\nи связан с сертификатом")
-                                else:
-                                    win.print_simple_info("Операция отменена пользователем")
+                                elif out_name == "empty":
+                                    win.print_error("Не введено имя")
                     else:
                         win.print_simple_info("Операция отменена пользователем")
                 else:
@@ -1589,7 +1601,6 @@ class TokenUI(Gtk.Box):
             self.info_class.print_simple_info("Произошла ошибка")
 
     def set_as_reader(self, token):
-        print(token)
         cpconfig = subprocess.Popen(['/usr/bin/cpconfig-%s' % arch, '-hardware', 'reader', '-add', f"{token}"],
                                     stdout=subprocess.PIPE)
         output = cpconfig.communicate()[0].decode('utf-8')
@@ -1948,6 +1959,9 @@ class InfoClass(Gtk.Window):
                                          buttons=Gtk.ButtonsType.OK_CANCEL,
                                          text="Введите лицензионный ключ:")
         dialogWindow.set_title("Лицензия КриптоПро")
+        dialogWindow.set_border_width(5)
+        dialogWindow.set_size_request(300, 100)
+        dialogWindow.set_resizable(True)
         dialogBox = dialogWindow.get_content_area()
         userEntry = Gtk.Entry()
         dialogBox.pack_end(userEntry, False, False, 0)
@@ -1973,6 +1987,10 @@ class InfoClass(Gtk.Window):
                                          buttons=Gtk.ButtonsType.OK_CANCEL,
                                          text=f"Новое имя:")
         dialogWindow.set_title("Имя контейнера")
+        dialogWindow.set_border_width(5)
+        dialogWindow.set_size_request(300, 100)
+        dialogWindow.set_resizable(True)
+
         dialogBox = dialogWindow.get_content_area()
         nameEntry = Gtk.Entry()
         nameEntry.set_text(f"{old_name}_copy")
@@ -2202,6 +2220,50 @@ class InfoClass(Gtk.Window):
         else:
             return True
 
+    def choose_dest_stores(self, liststore):
+        self.liststore_dest_stores = liststore
+        dialogWindow = Gtk.MessageDialog(parent=self,
+                                         modal=True, destroy_with_parent=True,
+                                         message_type=Gtk.MessageType.QUESTION,
+                                         buttons=Gtk.ButtonsType.OK_CANCEL)
+        dialogWindow.set_title("Выберите 1 хранилище для экспортира контейнера")
+        dialogWindow.set_resizable(True)
+        dialogBox = dialogWindow.get_content_area()
+
+        treeview = Gtk.TreeView(model=self.liststore_dest_stores)
+        max_len = 0
+        for elem in self.liststore_dest_stores:
+            if max_len < len(elem[0]):
+                max_len = len(elem[0])
+        renderer_text = Gtk.CellRendererText()
+        column_text = Gtk.TreeViewColumn("Хранилища", renderer_text, text=0)
+        treeview.append_column(column_text)
+
+        renderer_toggle = Gtk.CellRendererToggle()
+        renderer_toggle.connect("toggled", self.on_cell_dest_toggled)
+
+        column_toggle = Gtk.TreeViewColumn("Выбранный", renderer_toggle, active=1)
+        treeview.append_column(column_toggle)
+
+        sel = treeview.get_selection()
+        sel.set_mode(Gtk.SelectionMode.NONE)
+        scrolled_tree = Gtk.ScrolledWindow()
+        scrolled_tree.add(treeview)
+        if max_len < 40:
+            dialogWindow.set_size_request(380, 200)
+            scrolled_tree.set_size_request(380, 200)
+        else:
+            dialogWindow.set_size_request(580, 200)
+            scrolled_tree.set_size_request(580, 200)
+        dialogBox.pack_end(scrolled_tree, True, True, 0)
+        dialogWindow.show_all()
+        response = dialogWindow.run()
+        dialogWindow.destroy()
+        if (response == Gtk.ResponseType.CANCEL):
+            return False
+        else:
+            return True
+
     def choose_open_cert_to_close_container(self, container):
         dialog = Gtk.FileChooserDialog(title="Выберите сертификат пользователя", parent=self,
                                        action=Gtk.FileChooserAction.OPEN,
@@ -2235,7 +2297,7 @@ class InfoClass(Gtk.Window):
             dialog.destroy()
             return [False, "Отменено пользователем"]
 
-    def install_cert_from_or_to_container(self, container):
+    def install_cert_from_or_to_container(self, container, name_cont):
         # Требуется попробовать получить открытую часть хранилища автоматически, установленного локально в HDIMAGE
         self.output_code_token = False
         name = container.split("\\")[-1:][0].strip()
@@ -2244,7 +2306,7 @@ class InfoClass(Gtk.Window):
         output = csptest.communicate()[0].decode('cp1251').encode('utf-8').decode("utf-8")
         certs = []
         for line in output.split("\n"):
-            if "HDIMAGE" in line and name in line:
+            if name_cont in line and name in line:
                 certs.append(line)
         for cert in certs:
             cert = cert.split("|")[1].strip()
@@ -2504,8 +2566,14 @@ class InfoClass(Gtk.Window):
     def return_liststore_flashes(self):
         return self.liststore_flashes
 
+    def return_liststore_dest_stores(self):
+        return self.liststore_dest_stores
+
     def on_cell_toggled(self, widget, path):
         self.liststore_containers[path][1] = not self.liststore_containers[path][1]
+
+    def on_cell_dest_toggled(self, widget, path):
+        self.liststore_dest_stores[path][1] = not self.liststore_dest_stores[path][1]
 
     def on_cell_toggled_flash(self, widget, path):
         self.liststore_flashes[path][1] = not self.liststore_flashes[path][1]
@@ -2547,4 +2615,3 @@ if __name__ == "__main__":
     window.connect("destroy", Gtk.main_quit)
     window.show_all()
     Gtk.main()
-    

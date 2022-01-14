@@ -3,7 +3,7 @@
 #
 
 Name:        token-manager
-Version:     1.6
+Version:     1.7
 Release:     1%{dist}.3
 
 BuildArch:   noarch
@@ -65,6 +65,12 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/token-manager.de
 %{_datadir}/doc/%{name}/README.md
 
 %changelog
+* Fri Jan 14 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.7
+- added change names instead of name_copy for containers export
+- added destination choose for containers export
+- fix in token serial numbers
+- improvements in write_cert output
+
 * Thu Dec 30 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.6
 - added function for install cert to container
 
@@ -90,7 +96,7 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/token-manager.de
 - added check of pcscd status and enable it to autorun
 - fixed work for domain users without SecretNet
 
-* Thu Jul 26 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.4-4
+* Mon Jul 26 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.4-4
 - cosmetic update, that makes available to use system colors in most gtk app items instead of hardcoded #ffffff
 
 * Thu Jul 15 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.4-3
@@ -99,10 +105,10 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/token-manager.de
 * Wed Jul 7 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.4-2
 - improved compatibility for cryptocpro cert rc2 version 12000
 
-* Thu Jul 2 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.4-1
+* Fri Jul 2 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.4-1
 - improved compatibility for cryptocpro cert rc2
 
-* Thu Jun 29 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.4-0
+* Tue Jun 29 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.4-0
 - improved logic for secretnet users
 - added new submenu for usefull links
 
@@ -213,3 +219,4 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/token-manager.de
 
 * Thu Dec 04 2014 Boris Makarenko <bmakarenko90@gmail.com> - 0.1
 - Initial build
+
