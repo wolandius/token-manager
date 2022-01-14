@@ -1130,8 +1130,9 @@ class TokenUI(Gtk.Box):
                     for cont in selected_containers:
                         if cont[1]:
                             selected += 1
+
                     if selected > 1:
-                        win.print_simple_info(f"Выбрано {len(selected_containers)} контейнера(ов),\n"
+                        win.print_simple_info(f"Выбрано {selected} контейнера(ов),\n"
                                               "пожалуйста выберите лишь 1")
                     elif selected == 1:
                         for cont in selected_containers:
@@ -1140,10 +1141,20 @@ class TokenUI(Gtk.Box):
                                     print(c)
                                 # name = cont[0].split("\\")
                                 container = cont[0]
-                                if win.install_new_cert_to_container(container):
+                                output = win.install_new_cert_to_container(container)
+                                flag_success = False
+                                flag_cancel = False
+                                if output == "sucess":
+                                    flag_success = True
+                                elif output == "Операция отменена пользователем":
+                                    flag_cancel = True
+                                if flag_success:
                                     win.print_simple_info("Сертификат успешно скопирован в контейнер")
-                                else:
+                                elif flag_cancel:
                                     win.print_simple_info("Операция отменена пользователем")
+                                else:
+                                #     output = "\n".join(output)
+                                    win.print_big_error(output, 400, 300)
                 else:
                     win.print_simple_info("Операция отменена пользователем")
             else:
@@ -1326,16 +1337,26 @@ class TokenUI(Gtk.Box):
                             if cont[1]:
                                 selected += 1
                         if selected > 1:
-                            win.print_simple_info(f"Выбрано {len(selected_containers)} контейнера(ов),\n"
+                            win.print_simple_info(f"Выбрано {selected} контейнера(ов),\n"
                                                   f"приготовьтесь ввести пароли контейнеров\nнесколько раз и выбрать "
                                                   f"сертификаты\nоткрытой части ключа\n"
                                                   f"(если они не установятся автоматически)")
                         for cont in selected_containers:
                             if cont[1]:
                                 name = cont[0].split("\\")
+                                name = name[-1:][0]
+                                print(cont[0])
+
+                                out_name =  win.enter_container_name(self, name)
+                                if out_name == "empty":
+                                    win.print_error("Не введено имя")
+                                elif out_name == "canceled":
+                                    win.print_simple_info("Операция отменена пользователем")
+                                else:
+                                    container_name = out_name
                                 output = os.popen(f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{cont[0]}' "
-                                                  f"-contdest '\\\\.\\HDIMAGE\\{name[-1:][0]}_copy'").readlines()
-                                if win.install_cert_from_or_to_container(f"\\\\.\\HDIMAGE\\{name[-1:][0]}"):
+                                                  f"-contdest '\\\\.\\HDIMAGE\\{container_name}'").readlines()
+                                if win.install_cert_from_or_to_container(f"\\\\.\\HDIMAGE\\{name}"):
                                     win.print_simple_info("Контейнер успешно скопирован\nи связан с сертификатом")
                                 else:
                                     win.print_simple_info("Операция отменена пользователем")
@@ -1545,14 +1566,13 @@ class TokenUI(Gtk.Box):
                 self.tokens_for_import_container.append([token, False])
 
     def get_token_serial(self, token):
-        # print(f"/usr/bin/opensc-tool --serial -r {token}")
         opensc_tool = subprocess.Popen(['/usr/bin/opensc-tool', '--serial', '-r', token], stdout=subprocess.PIPE)
         output = opensc_tool.communicate()[0]
-        # print(output.decode('utf-8'))
         try:
-            # serial = '%010d' % (output[:11].replace(' ', ''), 16)
-            serial = int(output[:11].decode('utf-8').replace(' ', ''), 16)
-
+            serial = str(int(''.join(output.decode('utf-8').split(' ')[:-1]), 16))
+            if len(serial) < 10:
+                while(len(serial) < 10):
+                    serial = "0"+str(serial)
         except:
             return u'б/н'
         if not opensc_tool.returncode:
@@ -1826,6 +1846,32 @@ class InfoClass(Gtk.Window):
         response = dialogWindow.run()
         dialogWindow.destroy()
 
+    def print_big_error(self, info, widtn, heigth):
+        self.liststore = Gtk.ListStore(str)
+        self.liststore.append([info])
+        dialogWindow = Gtk.MessageDialog(parent=self,
+                                         modal=True, destroy_with_parent=True,
+                                         message_type=Gtk.MessageType.ERROR,
+                                         buttons=Gtk.ButtonsType.OK)
+        dialogWindow.set_title("Ошибка")
+        dialogWindow.set_resizable(True)
+        dialogBox = dialogWindow.get_content_area()
+
+        treeview = Gtk.TreeView(model=self.liststore)
+        sel = treeview.get_selection()
+        sel.set_mode(Gtk.SelectionMode.NONE)
+        renderer_text = Gtk.CellRendererText()
+        column_text = Gtk.TreeViewColumn("", renderer_text, text=0)
+        treeview.append_column(column_text)
+
+        scrolled_tree = Gtk.ScrolledWindow()
+        scrolled_tree.add(treeview)
+        dialogWindow.set_size_request(widtn, heigth)
+        dialogBox.pack_start(scrolled_tree, True, True, 0)
+        dialogWindow.show_all()
+        response = dialogWindow.run()
+        dialogWindow.destroy()
+
     def print_simple_info(self, info):
         dialog = Gtk.MessageDialog(parent=self, flags=0, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK,
                                    text="Информация")
@@ -1919,6 +1965,29 @@ class InfoClass(Gtk.Window):
                     self.print_simple_info('Лицензионный ключ успешно установлен')
             else:
                 self.print_error('Лицензионный ключ введен неверно!')
+
+    def enter_container_name(self, widget, old_name):
+        dialogWindow = Gtk.MessageDialog(parent=self,
+                                         modal=True, destroy_with_parent=True,
+                                         message_type=Gtk.MessageType.QUESTION,
+                                         buttons=Gtk.ButtonsType.OK_CANCEL,
+                                         text=f"Новое имя:")
+        dialogWindow.set_title("Имя контейнера")
+        dialogBox = dialogWindow.get_content_area()
+        nameEntry = Gtk.Entry()
+        nameEntry.set_text(f"{old_name}_copy")
+        dialogBox.pack_end(nameEntry, False, False, 0)
+        dialogWindow.show_all()
+        response = dialogWindow.run()
+        container_name = nameEntry.get_text()
+        dialogWindow.destroy()
+        if response == Gtk.ResponseType.OK:
+            if container_name != '':
+               return container_name
+            else:
+                return "empty"
+        elif response == Gtk.ResponseType.CANCEL:
+            return "canceled"
 
     def open_root_certs(self, widget):
         dialog = Gtk.FileChooserDialog(title="Выберите файл(ы)", parent=self,
@@ -2244,16 +2313,17 @@ class InfoClass(Gtk.Window):
             file_name = dialog.get_filename()
             dialog.destroy()
             if file_name:
-                output = os.popen(
-                    f"/opt/cprocsp/bin/{arch}/certmgr -inst -file '{file_name}' -cont '{container}' -inst_to_cont").readlines()
-                for l in output:
-                    if "[ErrorCode: 0x00000000]" in l:
-                        self.output_code_token = True
-                        return True
+                p = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-inst', '-file', file_name, '-cont',
+                                      container, '-inst_to_cont'], stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
+                output, error = p.communicate()
+                if p.returncode != 0:
+                    return error.decode("utf-8").strip()
+                else:
+                    return "success"
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
-            self.output_code_token = False
-            return False
+            return "Отменено пользователем"
 
     def return_output_code_token(self):
         return self.output_code_token
@@ -2477,3 +2547,4 @@ if __name__ == "__main__":
     window.connect("destroy", Gtk.main_quit)
     window.show_all()
     Gtk.main()
+    
