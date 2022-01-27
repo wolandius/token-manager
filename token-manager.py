@@ -45,7 +45,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, Pango
 from datetime import datetime
 
-VERSION = "1.7"
+VERSION = "1.8"
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help":
@@ -531,6 +531,17 @@ def del_store_cert(cert_index, store, CN):
             var += st
         return var
 
+def get_hdimage_containers():
+    if versiontuple(get_cspversion()[2]) <= versiontuple("5.0"):
+        find_hdimage_conts = os.popen(
+            f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | iconv -f cp1251 | grep HDIMAGE").readlines()
+    else:
+        find_hdimage_conts = os.popen(f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | grep HDIMAGE").readlines()
+    hdimage_conts = []
+    for cont in find_hdimage_conts:
+        cont = cont.split("|")[0].strip()
+        hdimage_conts.append(cont)
+    return hdimage_conts
 
 def set_license(cpro_license):
     cpconfig = subprocess.Popen(['/usr/bin/cpconfig-%s' % arch, '-license', '-set', cpro_license],
@@ -717,7 +728,10 @@ def list_root_certs():
 def get_token_certs(token):
     csptest = subprocess.Popen(['/opt/cprocsp/bin/%s/csptest' % arch, '-keyset', '-enum_cont', '-unique', '-fqcn',
                                 '-verifyc'], stdout=subprocess.PIPE)
-    output = csptest.communicate()[0].decode('cp1251').encode('utf-8').decode("utf-8")
+    if versiontuple(get_cspversion()[2]) <= versiontuple("5.0"):
+        output = csptest.communicate()[0].decode('cp1251').encode('utf-8').decode("utf-8")
+    else:
+        output = csptest.communicate()[0].decode("utf-8")
     certs = []
     if csptest.returncode:
         return u'Ошибка', 1
@@ -891,7 +905,7 @@ class MainMenu(Gtk.MenuBar):
         self.usb_flash_container = Gtk.MenuItem(label="_Скопировать контейнер с usb-flash накопителя",
                                                 use_underline=True)
         self.token_container = Gtk.MenuItem(label="_Скопировать контейнер с токена", use_underline=True)
-
+        self.hdimage_container = Gtk.MenuItem(label="_Скопировать контейнер из HDIMAGE на токен", use_underline=True)
 
         file_menu.append(self.add_license)
         file_menu.append(self.view_license)
@@ -905,6 +919,7 @@ class MainMenu(Gtk.MenuBar):
         file_menu.append(Gtk.SeparatorMenuItem.new())
         file_menu.append(self.token_container)
         file_menu.append(self.usb_flash_container)
+        file_menu.append(self.hdimage_container)
         self.append(file_item)
 
         Usefull_menu = Gtk.Menu()
@@ -965,6 +980,7 @@ class TokenUI(Gtk.Box):
         self.main_menu.actionUsefull_commands.connect("activate", self.usefull_commands)
         self.main_menu.token_container.connect("activate", self.token_container_install)
         self.main_menu.usb_flash_container.connect("activate", self.usb_flash_container_install)
+        self.main_menu.hdimage_container.connect("activate", self.hdimage_container_install)
         self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.set_border_width(3)
         self.main_box.pack_start(self.main_menu, False, True, 0)
@@ -1111,7 +1127,6 @@ class TokenUI(Gtk.Box):
     def write_cert(self, widget):
         win = InfoClass()
         containers = Gtk.ListStore(str, bool)
-        # if self.tokens_for_import_container is not None:
         if hasattr(self, 'tokens_for_import_container'):
             for token in self.tokens_for_import_container:
                 temp_cont = get_token_certs(token[0])
@@ -1155,8 +1170,6 @@ class TokenUI(Gtk.Box):
         else:
             win.print_simple_info("Токены не обнаружены")
 
-
-
     def delete_cert(self, button):
         (model, iter) = self.cert_selection.get_selected()
         if self.isToken:
@@ -1164,8 +1177,11 @@ class TokenUI(Gtk.Box):
                 ret = del_cont(self.cert)
                 if ret == u"Сертификат успешно удален":
                     self.info_class.print_simple_info(ret)
+                    self.cert_list.remove(iter)
+                    self.cert_selection.unselect_all()
                 else:
                     self.info_class.print_info(ret)
+
                 self.cert_delete.set_sensitive(False)
                 self.cert_view.set_sensitive(False)
                 self.cert_install.set_sensitive(False)
@@ -1182,6 +1198,7 @@ class TokenUI(Gtk.Box):
                 self.cert_install.set_sensitive(False)
                 if ret == u"Сертификат успешно удален":
                     self.cert_list.remove(iter)
+                    self.cert_selection.unselect_all()
 
     def select_cert(self, selection):
         self.cert_selection = selection
@@ -1214,7 +1231,6 @@ class TokenUI(Gtk.Box):
                 self.CN = str(model.get_value(iter, 1))
             except Exception as e:
                 pass
-
 
     def view_cert(self, widget):
         (model, iter) = self.cert_selection.get_selected()
@@ -1309,6 +1325,72 @@ class TokenUI(Gtk.Box):
         license_view.show_all()
         Gtk.main()
 
+    def hdimage_container_install(self, widget):
+        win = InfoClass()
+        if win.install_HDIMAGE:
+            containers = Gtk.ListStore(str, bool)
+            conts = get_hdimage_containers()
+            if len(conts) > 0:
+                for cont in conts:
+                    containers.append([cont, False])
+                if win.install_container_from_hdimage(containers):
+                    selected_containers_hdimage = win.return_liststore_hdimage_containers()
+                    if len(selected_containers_hdimage) > 0:
+                        selected_store_hdimage = None
+                        selected_stores = 0
+                        for cont in selected_containers_hdimage:
+                            if cont[1]:
+                                selected_store_hdimage = cont[0]
+                                selected_stores += 1
+                        if selected_stores == 1:
+                            name = selected_store_hdimage.split("\\")
+                            name = name[-1:][0]
+                            out_name = win.enter_container_name(self, name)
+                            if out_name != "empty" and out_name != "canceled":
+                                container_name = out_name
+                                dest_stores = get_tokens()[0]
+                                list_dest = Gtk.ListStore(str, bool)
+                                for store in dest_stores:
+                                    list_dest.append([store, False])
+                                if win.choose_dest_stores(list_dest):
+                                    selected_dest = win.return_liststore_dest_stores()
+                                    selected_stores = 0
+                                    for row in selected_dest:
+                                        if row[1]:
+                                            selected_store = row[0]
+                                            selected_stores += 1
+                                    if selected_stores > 1:
+                                        win.print_error("Необходимо выбрать 1 хранилище\n"
+                                                        "для завершения экспортирования")
+                                    elif selected_stores == 1:
+                                        output = os.popen(
+                                            f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{selected_store_hdimage}' "
+                                            f"-contdest '\\\\.\\{selected_store}\\{container_name}'").readlines()
+
+                                        if win.install_cert_from_or_to_container(
+                                                f"\\\\.\\{selected_store}\\{container_name}", selected_store):
+                                            win.print_simple_info(
+                                                "Контейнер успешно скопирован\nи связан с сертификатом")
+                                        else:
+                                            win.print_simple_info("Операция отменена пользователем")
+                                else:
+                                    win.print_simple_info("Операция отменена пользователем")
+                            elif out_name == "canceled":
+                                win.print_simple_info("Операция отменена пользователем")
+                            elif out_name == "empty":
+                                win.print_error("Не введено имя")
+                        else:
+                            win.print_error("Пожалуйста, выберите только 1 контейнер")
+                    else:
+                        win.print_error("Не выбрано контейнеров")
+                else:
+                    win.print_simple_info("Операция отменена пользователем")
+            else:
+                win.print_error("Хранилища в hdimage не обнаружены")
+
+        else:
+            win.print_simple_info("Операция отменена пользователем")
+
     def token_container_install(self, widget):
         win = InfoClass()
         if win.install_HDIMAGE:
@@ -1352,7 +1434,7 @@ class TokenUI(Gtk.Box):
                                             if row[1]:
                                                 selected_store = row[0]
                                                 selected_stores += 1
-                                        if selected_stores > 1:
+                                        if selected_stores != 1:
                                             win.print_error("Необходимо выбрать 1 хранилище\n"
                                                             "для завершения экспортирования")
                                         elif selected_stores == 1:
@@ -2173,6 +2255,53 @@ class InfoClass(Gtk.Window):
                 dialogWindow.destroy()
                 return False
 
+    def install_container_from_hdimage(self, liststore):
+        # сделать окно выбора контейнера из списка распознанных системой
+        # команда из ТГ по экспортированияю контейнера попробовать выполнить автоинсталл,
+        # в случае неудачи сделать по БЗ с явным указание открытого ключа
+        self.liststore_hdimage_containers = liststore
+        dialogWindow = Gtk.MessageDialog(parent=self,
+                                         modal=True, destroy_with_parent=True,
+                                         message_type=Gtk.MessageType.QUESTION,
+                                         buttons=Gtk.ButtonsType.OK_CANCEL)
+        dialogWindow.set_title("Выберите контейнер из hdimage")
+        dialogWindow.set_resizable(True)
+        dialogBox = dialogWindow.get_content_area()
+
+        treeview = Gtk.TreeView(model=self.liststore_hdimage_containers)
+        max_len = 0
+        for elem in self.liststore_hdimage_containers:
+            if max_len < len(elem[0]):
+                max_len = len(elem[0])
+        renderer_text = Gtk.CellRendererText()
+        column_text = Gtk.TreeViewColumn("Контейнеры", renderer_text, text=0)
+        treeview.append_column(column_text)
+
+        renderer_toggle = Gtk.CellRendererToggle()
+        renderer_toggle.connect("toggled", self.on_cell_hdimage_toggled)
+
+        column_toggle = Gtk.TreeViewColumn("Выбранный", renderer_toggle, active=1)
+        treeview.append_column(column_toggle)
+
+        sel = treeview.get_selection()
+        sel.set_mode(Gtk.SelectionMode.NONE)
+        scrolled_tree = Gtk.ScrolledWindow()
+        scrolled_tree.add(treeview)
+        if max_len < 40:
+            dialogWindow.set_size_request(380, 200)
+            scrolled_tree.set_size_request(380, 200)
+        else:
+            dialogWindow.set_size_request(580, 200)
+            scrolled_tree.set_size_request(580, 200)
+        dialogBox.pack_end(scrolled_tree, True, True, 0)
+        dialogWindow.show_all()
+        response = dialogWindow.run()
+        dialogWindow.destroy()
+        if (response == Gtk.ResponseType.CANCEL):
+            return False
+        else:
+            return True
+
     def install_container_from_token(self, liststore):
         # сделать окно выбора контейнера из списка распознанных системой
         # команда из ТГ по экспортированияю контейнера попробовать выполнить автоинсталл,
@@ -2569,8 +2698,14 @@ class InfoClass(Gtk.Window):
     def return_liststore_dest_stores(self):
         return self.liststore_dest_stores
 
+    def return_liststore_hdimage_containers(self):
+        return self.liststore_hdimage_containers
+
     def on_cell_toggled(self, widget, path):
         self.liststore_containers[path][1] = not self.liststore_containers[path][1]
+
+    def on_cell_hdimage_toggled(self, widget, path):
+        self.liststore_hdimage_containers[path][1] = not self.liststore_hdimage_containers[path][1]
 
     def on_cell_dest_toggled(self, widget, path):
         self.liststore_dest_stores[path][1] = not self.liststore_dest_stores[path][1]
