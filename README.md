@@ -10,12 +10,3 @@ opensc, cprocsp-rdr-pcsc-64, lsb-cprocsp-capilite-64, opensc, cprocsp-rdr-gui or
 If you have installed all of those packages, you are able to run <b>python token-manager.py</b> to use it.
 
 Parent project by Boris Makarenko https://github.com/bmakarenko/token-manager
-
-Building RPM package
-===============
-
-Make sure you have installed rpmbuild utility. Then you can run rpmbuild.sh shell-script to build RPM package. The package you can find at /rpmbuild/RPMS/noarch
-
-`bash ./rpmbuild`
-
-and versions token-manager*.el7.3 and token-manager*.el7.2 will appear.
