@@ -1,0 +1,4 @@
+rpmbuild.sh
+*.rpm
+test*
+.idea
