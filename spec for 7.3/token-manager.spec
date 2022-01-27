@@ -3,7 +3,7 @@
 #
 
 Name:        token-manager
-Version:     1.7
+Version:     1.8
 Release:     1%{dist}.3
 
 BuildArch:   noarch
@@ -65,6 +65,9 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/token-manager.de
 %{_datadir}/doc/%{name}/README.md
 
 %changelog
+* Mon Jan 24 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.8
+- fixed update list in case of delete containers
+
 * Fri Jan 14 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.7
 - added change names instead of name_copy for containers export
 - added destination choose for containers export
