@@ -3,7 +3,7 @@
 #
 
 Name:        token-manager
-Version:     1.8
+Version:     1.9
 Release:     1%{dist}.3
 
 BuildArch:   noarch
@@ -65,6 +65,11 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/token-manager.de
 %{_datadir}/doc/%{name}/README.md
 
 %changelog
+* Wed Feb 9 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.9
+- changed logic for certmgr -inst -inst_to_cont -file -cont, now numeric container name uses
+- added mask *.CER and *.CRT in addition to *.cer, *.cer
+- improved usb-flash containers export logic, now available to rename it
+
 * Mon Jan 24 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.8
 - fixed update list in case of delete containers
 

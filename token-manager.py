@@ -3,6 +3,7 @@
 
 """
 Copyright (c) 2017 Борис Макаренко
+Copyright (c) 2020-2022 Владлен Мурылев
 
 Данная лицензия разрешает лицам, получившим копию данного программного обеспечения и сопутствующей документации
 (в дальнейшем именуемыми «Программное Обеспечение»), безвозмездно использовать Программное Обеспечение без ограничений,
@@ -20,6 +21,7 @@ Copyright (c) 2017 Борис Макаренко
 ПРОГРАММНОГО ОБЕСПЕЧЕНИЯ ИЛИ ИНЫХ ДЕЙСТВИЙ С ПРОГРАММНЫМ ОБЕСПЕЧЕНИЕМ..
 
 Copyright (c) 2017 Boris Makarenko
+Copyright (c) 2020-2022 Vladlen Murylev
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -45,7 +47,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, Pango
 from datetime import datetime
 
-VERSION = "1.8"
+VERSION = "1.9"
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help":
@@ -489,6 +491,14 @@ def check_user_pin():
     else:
         return None
 
+def get_container_numeric_name(container):
+    if versiontuple(get_cspversion()[2]) <= versiontuple("5.0.11455"):
+        find_cont = os.popen(
+            f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | iconv -f cp1251 | grep '{container}'").readlines()
+    else:
+        find_cont = os.popen(
+            f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | grep '{container}'").readlines()
+    return find_cont[0].split("|")[1].strip()
 
 def versiontuple(v):
     return tuple(map(int, (v.split("."))))
@@ -532,7 +542,7 @@ def del_store_cert(cert_index, store, CN):
         return var
 
 def get_hdimage_containers():
-    if versiontuple(get_cspversion()[2]) <= versiontuple("5.0"):
+    if versiontuple(get_cspversion()[2]) <= versiontuple("5.0.11455"):
         find_hdimage_conts = os.popen(
             f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | iconv -f cp1251 | grep HDIMAGE").readlines()
     else:
@@ -728,7 +738,7 @@ def list_root_certs():
 def get_token_certs(token):
     csptest = subprocess.Popen(['/opt/cprocsp/bin/%s/csptest' % arch, '-keyset', '-enum_cont', '-unique', '-fqcn',
                                 '-verifyc'], stdout=subprocess.PIPE)
-    if versiontuple(get_cspversion()[2]) <= versiontuple("5.0"):
+    if versiontuple(get_cspversion()[2]) <= versiontuple("5.0.11455"):
         output = csptest.communicate()[0].decode('cp1251').encode('utf-8').decode("utf-8")
     else:
         output = csptest.communicate()[0].decode("utf-8")
@@ -1149,7 +1159,12 @@ class TokenUI(Gtk.Box):
                     elif selected == 1:
                         for cont in selected_containers:
                             if cont[1]:
-                                container = cont[0]
+                                container = rf"{cont[0]}"
+                                container = re.sub(r'\\', r'\\\\', container)
+                                container = re.sub(r'\.', r'\\.', container)
+                                container = re.sub(r'\\\\\\', r'\\\\', container)
+                                container = get_container_numeric_name(container)
+
                                 output = win.install_new_cert_to_container(container)
                                 flag_success = False
                                 flag_cancel = False
@@ -1481,20 +1496,16 @@ class TokenUI(Gtk.Box):
                 for cont in selected_containers:
                     if cont[1]:
                         selected += 1
-                path = win.choose_folder_container_dialog(self, secretnet)
-
-                if path:
-                    # поиск имени по аналогии с флешками, в виду возможности наличия домена уровнем выше имени пользователя
-                    domain_name = os.popen("echo $USERNAME").readlines()[0]
-                    if "\\" in domain_name:
-                        domain_name = domain_name.split("\\")[1]
-                    elif "@" in domain_name:
-                        domain_name = domain_name.split("@")[0]
-                    find_name = os.popen(f"find /var/opt/cprocsp/keys/ -name {domain_name}").readlines()
-                    if find_name:
-                        find_name = find_name[0].strip()
-                        if os.path.exists(f"{path}/name.key"):
-                            file = os.popen(f"cat '{path}/name.key'  | iconv -f cp1251").readlines()
+                # path = win.choose_folder_container_dialog(self, secretnet)
+                        # поиск имени по аналогии с флешками, в виду возможности наличия домена уровнем выше имени пользователя
+                        domain_name = os.popen("echo $USERNAME").readlines()[0]
+                        if "\\" in domain_name:
+                            domain_name = domain_name.split("\\")[1]
+                        elif "@" in domain_name:
+                            domain_name = domain_name.split("@")[0]
+                        find_name = os.popen(f"find /var/opt/cprocsp/keys/ -name {domain_name}").readlines()
+                        if find_name:
+                            find_name = find_name[0].strip()
                             if selected > 1:
                                 win.print_simple_info(f"Выбрано {len(selected_containers)} контейнера(ов),\n"
                                                       f"приготовьтесь ввести пароли контейнеров\nнесколько раз и выбрать "
@@ -1503,23 +1514,44 @@ class TokenUI(Gtk.Box):
                             for cont in selected_containers:
                                 if cont[1]:
                                     name = cont[0].split("\\")
-                                    detected_name = False
-                                    for line in file:
-                                        if name[-1:][0] in line.strip():
-                                            detected_name = True
-                                if detected_name:
-                                    os.popen(f"cp -r '{path}' '{find_name}'")
-                                    if win.install_cert_from_or_to_usb_flash(f"\\\\.\\HDIMAGE\\{name[-1:][0]}"):
-                                        win.print_simple_info(
-                                            "Контейнер успешно скопирован\nи связан с сертификатом")
-                                    else:
+                                    name = name[-1:][0]
+                                    out_name = win.enter_container_name(self, name)
+                                    if out_name != "empty" and out_name != "canceled":
+                                        container_name = out_name
+                                        dest_stores = get_tokens()[0]
+                                        dest_stores.append("HDIMAGE")
+                                        list_dest = Gtk.ListStore(str, bool)
+                                        for store in dest_stores:
+                                            list_dest.append([store, False])
+                                        if win.choose_dest_stores(list_dest):
+                                            selected_dest = win.return_liststore_dest_stores()
+                                            selected_stores = 0
+                                            for row in selected_dest:
+                                                if row[1]:
+                                                    selected_store = row[0]
+                                                    selected_stores += 1
+                                            if selected_stores != 1:
+                                                win.print_error("Необходимо выбрать 1 хранилище\n"
+                                                                "для завершения экспортирования")
+                                            elif selected_stores == 1:
+                                                output = os.popen(
+                                                    f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{cont[0]}' "
+                                                    f"-contdest '\\\\.\\{selected_store}\\{container_name}' | iconv -f cp1251").readlines()
+
+                                                if win.install_cert_from_or_to_container(
+                                                        f"\\\\.\\{selected_store}\\{container_name}", selected_store):
+                                                    win.print_simple_info(
+                                                        "Контейнер успешно скопирован\nи связан с сертификатом")
+                                                else:
+                                                    win.print_simple_info("Операция отменена пользователем")
+                                        else:
+                                            win.print_simple_info("Операция отменена пользователем")
+                                    elif out_name == "canceled":
                                         win.print_simple_info("Операция отменена пользователем")
+                                    elif out_name == "empty":
+                                        win.print_error("Не введено имя")
                                 else:
                                     win.print_simple_info("Выбран не верный путь, отмена операции")
-                        else:
-                            win.print_simple_info("Выбран не верный путь, отмена операции")
-                else:
-                    win.print_simple_info("Операция отменена пользователем")
             else:
                 win.print_simple_info("Операция отменена пользователем")
         else:
@@ -1535,7 +1567,6 @@ class TokenUI(Gtk.Box):
             if find_secretnet:
                 status = win.call_secretnet_configs(self)
                 if status == "installed":
-
                     self.call_flash_container_install(True)
                 elif status == "just_installed":
                     win.print_simple_info("Переподключите usb-flash накопитель\nи повторите операцию")
@@ -1561,7 +1592,6 @@ class TokenUI(Gtk.Box):
                     self.info_class.print_simple_info(ret)
                 else:
                     # Вариант с открытой частью не удался, предлагаем пользователю самому выбрать сертификат для закрытой части.
-                    # self.info_class.print_info(strk, 600, 300)
                     output = win.choose_open_cert_to_close_container(self.cert)
                     if output[0]:
                         self.info_class.print_simple_info(u"Сертификат успешно установлен")
@@ -1580,7 +1610,6 @@ class TokenUI(Gtk.Box):
                 self.info_class.print_simple_info(ret)
             else:
                 # Вариант с открытой частью не удался, предлагаем пользователю самому выбрать сертификат для закрытой части.
-                # self.info_class.print_info(strk, 600, 300)
                 output = win.choose_open_cert_to_close_container(self.cert)
                 if output[0]:
                     self.info_class.print_simple_info(u"Сертификат успешно установлен")
@@ -1753,9 +1782,14 @@ class About(Gtk.Window):
                               "Релиз: %s "
                               "ОС: %s" % get_cspversion())
         self.label_href = Gtk.Label()
-        self.label_href.set_markup("\t\tБорис Макаренко\n\t\tУИТ ФССП России"
+        self.label_href.set_markup("\n"
+                                   "Борис Макаренко УИТ ФССП России"
                                    "\nE-mail: <a href='mailto:makarenko@fssprus.ru'>makarenko@fssprus.ru</a>"
                                    "\n<a href='mailto:bmakarenko90@gmail.com'>bmakarenko90@gmail.com</a>\n"
+                                   "-----------------------------\n"
+                                   "Владлен Мурылев ООО \"РЕД СОФТ\""
+                                   "\nE-mail: <a href='mailto:vladlen.murylyov@red-soft.ru'>vladlen.murylyov@red-soft.ru</a>"
+                                   "\n-----------------------------"
                                    "\n\t\t<a href='http://opensource.org/licenses/MIT'>Лицензия MIT</a>")
         self.box.pack_start(self.label, True, True, 0)
         self.main_box.pack_start(self.box, True, True, 0)
@@ -2021,6 +2055,7 @@ class InfoClass(Gtk.Window):
         filter.set_name("Сертификаты *.cer")
         filter.add_mime_type("Сертификаты")
         filter.add_pattern("*.cer")
+        filter.add_pattern("*.CER")
         dialog.add_filter(filter)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
@@ -2099,7 +2134,9 @@ class InfoClass(Gtk.Window):
         filter.set_name("Сертификаты *.cer *.crt")
         filter.add_mime_type("Сертификаты")
         filter.add_pattern("*.cer")
+        filter.add_pattern("*.CER")
         filter.add_pattern("*.crt")
+        filter.add_pattern("*.CRT")
         dialog.add_filter(filter)
         dialog.set_select_multiple(True)
         response = dialog.run()
@@ -2403,6 +2440,7 @@ class InfoClass(Gtk.Window):
         filter.set_name("Сертификаты")
         filter.add_mime_type("Сертификаты")
         filter.add_pattern("*.cer")
+        filter.add_pattern("*.CER")
         dialog.add_filter(filter)
         domain_name = os.popen("echo $USERNAME").readlines()[0].strip()
         if "\\" in domain_name:
@@ -2455,6 +2493,7 @@ class InfoClass(Gtk.Window):
             filter.set_name("Сертификаты")
             filter.add_mime_type("Сертификаты")
             filter.add_pattern("*.cer")
+            filter.add_pattern("*.CER")
             dialog.add_filter(filter)
             domain_name = os.popen("echo $USERNAME").readlines()[0].strip()
             if "\\" in domain_name:
@@ -2490,6 +2529,7 @@ class InfoClass(Gtk.Window):
         filter.set_name("Сертификаты")
         filter.add_mime_type("Сертификаты")
         filter.add_pattern("*.cer")
+        filter.add_pattern("*.CER")
         dialog.add_filter(filter)
         domain_name = os.popen("echo $USERNAME").readlines()[0].strip()
         if "\\" in domain_name:
@@ -2661,6 +2701,7 @@ class InfoClass(Gtk.Window):
             filter.set_name("Сертификаты")
             filter.add_mime_type("Сертификаты")
             filter.add_pattern("*.cer")
+            filter.add_pattern("*.CER")
             dialog.add_filter(filter)
             domain_name = os.popen("echo $USERNAME").readlines()[0]
             if "\\" in domain_name:
