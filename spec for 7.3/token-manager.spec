@@ -11,7 +11,7 @@ BuildArch:   noarch
 Summary:     Certificate manager for CryptoPro CSP
 License:     MIT
 Group:       System Environment/Base
-Url:         https://github.com/bmakarenko/token-manager
+Url:         https://github.com/wolandius/token-manager
 
 Source0:     token-manager.py
 Source1:     token-manager.png
