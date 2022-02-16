@@ -1,0 +1,15 @@
+#!/usr/bin/env xdg-open
+
+[Desktop Entry]
+Encoding=UTF-8
+Name=Token Manager ia32
+Name[ru]=Ключевые носители и сертификаты ia32
+Comment[ru]=Установить сертификаты с ключевых носителей ia32
+Exec=python3 /usr/bin/token-manager.py --ia32
+Terminal=false
+Type=Application
+Icon=/usr/share/pixmaps/token-manager.png
+StartupNotify=true
+MimeType=application/x-x509-ca-cert;
+X-Desktop-File-Install-Version=0.15
+Categories=Qt;HardwareSettings;Settings;System;

@@ -3,7 +3,7 @@
 #
 
 Name:        token-manager
-Version:     1.9
+Version:     2.0
 Release:     1%{dist}.2
 
 BuildArch:   noarch
@@ -16,11 +16,12 @@ Url:         https://github.com/wolandius/token-manager
 Source0:     token-manager.py
 Source1:     token-manager.png
 Source2:     token-manager.desktop
-Source3:     cpconfig-pam
-Source4:     cpconfig-amd64
-Source5:     cpconfig-ia32
-Source6:     LICENSE.md
-Source7:     README.md
+Source3:     token-manager-ia32.desktop
+Source4:     cpconfig-pam
+Source5:     cpconfig-amd64
+Source6:     cpconfig-ia32
+Source7:     LICENSE.md
+Source8:     README.md
 
 Requires:    usermode
 Requires:    opensc
@@ -33,30 +34,53 @@ A GTK front-end for Crypto Pro CSP for RED OS and GosLinux.
 mkdir -p %{buildroot}/%{_bindir}
 ln -sf /usr/bin/consolehelper %{buildroot}%{_bindir}/cpconfig-amd64
 ln -sf /usr/bin/consolehelper %{buildroot}%{_bindir}/cpconfig-ia32
-%{__install} -m 0755 %{SOURCE0} %{buildroot}%{_bindir}/token-manager.py
+%{__install} -m 0755 %{SOURCE0} %{buildroot}%{_bindir}/%{name}.py
 mkdir -p %{buildroot}/%{_datadir}/pixmaps
 mkdir -p %{buildroot}/%{_datadir}/applications
-%{__install} -m 0644 %{SOURCE1} %{buildroot}%{_datadir}/pixmaps/token-manager.png
-%{__install} -m 0755 %{SOURCE2} %{buildroot}%{_datadir}/applications/token-manager.desktop
+%{__install} -m 0644 %{SOURCE1} %{buildroot}%{_datadir}/pixmaps/%{name}.png
+%{__install} -m 0755 %{SOURCE2} %{buildroot}%{_datadir}/applications/%{name}.desktop
+%{__install} -m 0755 %{SOURCE3} %{buildroot}%{_datadir}/applications/%{name}-ia32.desktop
 mkdir -p %{buildroot}/%{_sysconfdir}/pam.d
 mkdir -p %{buildroot}/%{_sysconfdir}/security/console.apps
-%{__install} -m 0644 %{SOURCE3} %{buildroot}%{_sysconfdir}/pam.d/cpconfig-amd64
-%{__install} -m 0644 %{SOURCE3} %{buildroot}%{_sysconfdir}/pam.d/cpconfig-ia32
-%{__install} -m 0644 %{SOURCE4} %{buildroot}%{_sysconfdir}/security/console.apps/cpconfig-amd64
-%{__install} -m 0644 %{SOURCE5} %{buildroot}%{_sysconfdir}/security/console.apps/cpconfig-ia32
+%{__install} -m 0644 %{SOURCE4} %{buildroot}%{_sysconfdir}/pam.d/cpconfig-amd64
+%{__install} -m 0644 %{SOURCE4} %{buildroot}%{_sysconfdir}/pam.d/cpconfig-ia32
+%{__install} -m 0644 %{SOURCE5} %{buildroot}%{_sysconfdir}/security/console.apps/cpconfig-amd64
+%{__install} -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/security/console.apps/cpconfig-ia32
 mkdir -p %{buildroot}%{_datadir}/doc/%{name}
-%{__install} -m 0644 %{SOURCE6} %{buildroot}%{_datadir}/doc/%{name}/LICENSE.md
-%{__install} -m 0644 %{SOURCE7} %{buildroot}%{_datadir}/doc/%{name}/README.md
+%{__install} -m 0644 %{SOURCE7} %{buildroot}%{_datadir}/doc/%{name}/LICENSE.md
+%{__install} -m 0644 %{SOURCE8} %{buildroot}%{_datadir}/doc/%{name}/README.md
+
+touch %{buildroot}/%{_bindir}/%{name}
+cat > %{buildroot}/%{_bindir}/%{name} <<-EOF
+#!/bin/bash
+if [ "\$#" -ne 0 ]; then
+   /usr/bin/python3 /usr/bin/%{name}.py \$@
+else
+   /usr/bin/python3 /usr/bin/%{name}.py
+fi
+EOF
+chmod 0755 %{buildroot}/%{_bindir}/%{name}
+
+touch %{buildroot}/%{_bindir}/%{name}-ia32
+cat > %{buildroot}/%{_bindir}/%{name}-ia32 <<-EOF
+#!/bin/bash
+/usr/bin/python3 /usr/bin/%{name}.py --ia32
+EOF
+chmod 0755 %{buildroot}/%{_bindir}/%{name}-ia32
 
 %post
-xdg-desktop-menu install --mode system %{_datadir}/applications/token-manager.desktop
+xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}.desktop
+xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.desktop
 
 %files
 %{_bindir}/cpconfig-amd64
 %{_bindir}/cpconfig-ia32
-%attr(0755,root,root) %{_bindir}/token-manager.py
+%attr(0755,root,root) %{_bindir}/%{name}.py
+%attr(0755,root,root) %{_bindir}/%{name}
+%attr(0755,root,root) %{_bindir}/%{name}-ia32
 %{_datadir}/pixmaps/token-manager.png
-%attr(0755,root,root) %{_datadir}/applications/token-manager.desktop
+%attr(0755,root,root) %{_datadir}/applications/%{name}.desktop
+%attr(0755,root,root) %{_datadir}/applications/%{name}-ia32.desktop
 %{_sysconfdir}/pam.d/cpconfig-amd64
 %{_sysconfdir}/pam.d/cpconfig-ia32
 %{_sysconfdir}/security/console.apps/cpconfig-amd64
@@ -64,10 +88,18 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/token-manager.de
 %{_datadir}/doc/%{name}/LICENSE.md
 %{_datadir}/doc/%{name}/README.md
 
+
 %changelog
+* Mon Feb 14 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 2.0
+- Fixed non-fatal error in refresh
+- Hide button "connect as reader", because this one not used
+- added aliases for name token-manager.py - token-manager and token-manager-ia32
+- added shortcut for ia32
+- rebased regex logic in get_store_certs to show more home certs with redwine use
+
 * Wed Feb 9 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.9
 - changed logic for certmgr -inst -inst_to_cont -file -cont, now numeric container name uses
-- added mask *.CER and *.CRT in addition to *.cer, *.cer
+- added mask *.CER and *.CRT in addition to *.cer, *.crt
 - improved usb-flash containers export logic, now available to rename it
 
 * Mon Jan 24 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.8
