@@ -22,6 +22,8 @@ Source5:     cpconfig-amd64
 Source6:     cpconfig-ia32
 Source7:     LICENSE.md
 Source8:     README.md
+Source9:     token-manager
+Source10:    token-manager-ia32
 
 Requires:    usermode
 Requires:    opensc
@@ -29,6 +31,14 @@ Requires:    xdg-utils
 
 %description
 A GTK front-end for Crypto Pro CSP for RED OS and GosLinux.
+
+%package ia32
+Summary:     Certificate manager for 32-bit CryptoPro CSP
+BuildArch:   noarch
+Requires:    %{name}
+
+%description ia32
+A GTK front-end for 32-bit Crypto Pro CSP for RED OS and GosLinux.
 
 %install
 mkdir -p %{buildroot}/%{_bindir}
@@ -50,94 +60,84 @@ mkdir -p %{buildroot}%{_datadir}/doc/%{name}
 %{__install} -m 0644 %{SOURCE7} %{buildroot}%{_datadir}/doc/%{name}/LICENSE.md
 %{__install} -m 0644 %{SOURCE8} %{buildroot}%{_datadir}/doc/%{name}/README.md
 
-touch %{buildroot}/%{_bindir}/%{name}
-cat > %{buildroot}/%{_bindir}/%{name} <<-EOF
-#!/bin/bash
-if [ "\$#" -ne 0 ]; then
-   /usr/bin/python3 /usr/bin/%{name}.py \$@
-else
-   /usr/bin/python3 /usr/bin/%{name}.py
-fi
-EOF
-chmod 0755 %{buildroot}/%{_bindir}/%{name}
-
-touch %{buildroot}/%{_bindir}/%{name}-ia32
-cat > %{buildroot}/%{_bindir}/%{name}-ia32 <<-EOF
-#!/bin/bash
-/usr/bin/python3 /usr/bin/%{name}.py --ia32
-EOF
-chmod 0755 %{buildroot}/%{_bindir}/%{name}-ia32
+%{__install} -m 0755 %{SOURCE9} %{buildroot}%{_bindir}/%{name}
+%{__install} -m 0755 %{SOURCE10} %{buildroot}%{_bindir}/%{name}-ia32
 
 %post
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}.desktop
+
+%post ia32
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.desktop
 
 %files
-%{_bindir}/cpconfig-amd64
-%{_bindir}/cpconfig-ia32
-%attr(0755,root,root) %{_bindir}/%{name}.py
-%attr(0755,root,root) %{_bindir}/%{name}
-%attr(0755,root,root) %{_bindir}/%{name}-ia32
-%{_datadir}/pixmaps/token-manager.png
-%attr(0755,root,root) %{_datadir}/applications/%{name}.desktop
-%attr(0755,root,root) %{_datadir}/applications/%{name}-ia32.desktop
-%{_sysconfdir}/pam.d/cpconfig-amd64
-%{_sysconfdir}/pam.d/cpconfig-ia32
-%{_sysconfdir}/security/console.apps/cpconfig-amd64
-%{_sysconfdir}/security/console.apps/cpconfig-ia32
 %{_datadir}/doc/%{name}/LICENSE.md
 %{_datadir}/doc/%{name}/README.md
+%{_bindir}/cpconfig-amd64
+%attr(0755,root,root) %{_bindir}/%{name}.py
+%attr(0755,root,root) %{_bindir}/%{name}
+%{_sysconfdir}/pam.d/cpconfig-amd64
+%{_sysconfdir}/security/console.apps/cpconfig-amd64
+%{_datadir}/pixmaps/token-manager.png
+%attr(0755,root,root) %{_datadir}/applications/%{name}.desktop
 
+%files ia32
+%{_bindir}/cpconfig-ia32
+%attr(0755,root,root) %{_bindir}/%{name}-ia32
+%{_sysconfdir}/pam.d/cpconfig-ia32
+%{_sysconfdir}/security/console.apps/cpconfig-ia32
+%attr(0755,root,root) %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
-* Mon Feb 14 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 2.0
+* Mon Feb 21 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.0-1
 - Fixed non-fatal error in refresh
 - Hide button "connect as reader", because this one not used
 - added aliases for name token-manager.py - token-manager and token-manager-ia32
 - added shortcut for ia32
+- devide binary packages for main and ia32
 - rebased regex logic in get_store_certs to show more home certs with redwine use
 
-* Wed Feb 9 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.9
-- changed logic for certmgr -inst -inst_to_cont -file -cont, now numeric container name uses
-- added mask *.CER and *.CRT in addition to *.cer, *.crt
-- improved usb-flash containers export logic, now available to rename it
+* Wed Feb 09 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:1.9-1
+- changed logic for certmgr -inst -inst_to_cont
+  -file -cont, now numeric container name uses
+- added mask *.CER and *.CRT in addition to *.cer, *.cer
+- improved usb-flash containers export logic,
+  now available to rename it
 
-* Mon Jan 24 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.8
+* Mon Jan 24 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:1.8-1
 - fixed update list in case of delete containers
 
-* Fri Jan 14 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.7
+* Fri Jan 14 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:1.7-1
 - added change names instead of name_copy for containers export
 - added destination choose for containers export
 - fix in token serial numbers
 - improvements in write_cert output
 
-* Thu Dec 30 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.6
+* Thu Dec 30 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:1.6-1
 - added function for install cert to container
 
-* Thu Dec 23 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.5
+* Thu Dec 23 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:1.5-1
 - fix in serial = int(output[:11].decode('utf-8').replace(' ', ''), 16)
 - added hand choose arch for debugmode
 
-* Thu Dec 02 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.4
-- bug fixe in def delete_from_Token(self):
-- fixed warning  Warning: unable to set property 'background' of type 'gchararray' from value of type 'GdkRGBA'
+* Thu Dec 02 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:1.4-1
+- bug fixe in def delete_from_Token(self)
+- fixed warning  Warning: unable to set property
+  'background' of type 'gchararray' from value of type 'GdkRGBA'
 
-* Thu Nov 25 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.3-2
+* Thu Nov 25 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:1.3-2
 - bug fixes in self.name and if tokens not exists
 - added version key for terminal
 
-* Fri Nov 19 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.3-1
-- added key '--debug-output' for main funcs work output
+* Mon Nov 22 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:1.3-1
+- added option '--debug-output' for analyzing main funcs worikng
 
-* Mon Oct 25 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.2-1
-- added aarch64 and e2k64 compitibility
-
-* Sun Sep 26 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 1.1-1
+* Sun Sep 26 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:1.1-1
 - added check of pcscd status and enable it to autorun
 - fixed work for domain users without SecretNet
 
 * Mon Jul 26 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.4-4
-- cosmetic update, that makes available to use system colors in most gtk app items instead of hardcoded #ffffff
+- cosmetic update, that makes available to use system colors
+  in most gtk app items instead of hardcoded #ffffff
 
 * Thu Jul 15 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.4-3
 - improved compatibility for cryptocpro4 non-cert rc5 version 4.0.9975
@@ -259,4 +259,3 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 
 * Thu Dec 04 2014 Boris Makarenko <bmakarenko90@gmail.com> - 0.1
 - Initial build
-
