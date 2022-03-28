@@ -2963,9 +2963,9 @@ class InfoClass(Gtk.Window):
             if response == Gtk.ResponseType.OK:
                 pin = pinEntry.get_text()
                 ROOTPSW = pin  # сделать окно диалог с запросом рут пароля.
-                os.system(f"""su - root -c 'cat << EOF >{file}
-            """ + """ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"
-            EOF' <<< """ + f"'{ROOTPSW}'")
+                os.system("""su - root -c 'cat << EOF > /etc/udev/rules.d/87-domain_usb.rules \n""" \
+                """ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"\n""" \
+                """EOF'""" + f"<<< '{ROOTPSW}'")
                 os.system(f"""su - root -c 'udevadm control --reload' <<< '{ROOTPSW}' """)
                 dialogWindow.destroy()
                 return "just_installed"
