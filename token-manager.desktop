@@ -10,6 +10,5 @@ Terminal=false
 Type=Application
 Icon=/usr/share/pixmaps/token-manager.png
 StartupNotify=true
-MimeType=application/x-x509-ca-cert;
 X-Desktop-File-Install-Version=0.15
-Categories=Qt;HardwareSettings;Settings;System;
+Categories=HardwareSettings;Settings;System;

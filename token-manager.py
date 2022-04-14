@@ -49,7 +49,7 @@ from datetime import datetime
 
 from pathlib import Path
 
-VERSION = "2.0"
+VERSION = "2.1"
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help":
@@ -525,26 +525,26 @@ def del_cont(cert):
     return u"Сертификат успешно удален"
 
 
-def del_store_cert(cert_index, store, CN):
-    var = CN.split("\nвыдан ")
-    Cn = "'" + var[0] + "'"
-    O = "'" + var[1].split("\nорганизация ")[1] + "'"
+def del_store_cert(store, certID):
+    # var = CN.split("\nвыдан ")
+    # Cn = "'" + var[0] + "'"
+    # O = "'" + var[1].split("\nорганизация ")[1] + "'"
     ## if in mRoot delete from mRoot else from uRoot
 
     if store == 'uRoot':
         # try to find cert in mRoot at first
-        certs = os.popen(f"/opt/cprocsp/bin/{arch}/certmgr -list -store mRoot | grep CN={Cn} | grep O={O}").readlines()
+        certs = os.popen(f"/opt/cprocsp/bin/{arch}/certmgr -list -store mRoot | grep {certID}").readlines()
         if len(certs) > 0:
-            O = re.sub('"', '\\\"', O)
-            Cn = re.sub('"', '\\\"', Cn)
+            # O = re.sub('"', '\\\"', O)
+            # Cn = re.sub('"', '\\\"', Cn)
             certmgr = os.popen(
-                f"""beesu /opt/cprocsp/bin/{arch}/certmgr -delete -store mRoot -dn CN="{Cn}",O="{O}" """).readlines()
+                f"""beesu /opt/cprocsp/bin/{arch}/certmgr -delete -store mRoot -keyid "{certID}" """).readlines()
         else:
             certmgr = os.popen(
-                f'echo 1 | /opt/cprocsp/bin/{arch}/certmgr -delete -store {store} -dn CN={Cn},O={O}').readlines()
+                f'echo 1 | /opt/cprocsp/bin/{arch}/certmgr -delete -store {store} -keyid "{certID}" ').readlines()
     else:
         certmgr = os.popen(
-            f'echo 1 | /opt/cprocsp/bin/{arch}/certmgr -delete -store {store} -dn CN={Cn},O={O}').readlines()
+            f'echo 1 | /opt/cprocsp/bin/{arch}/certmgr -delete -store {store} -keyid "{certID}" ').readlines()
     var = ""
     if "[ErrorCode: 0x00000000]" in certmgr[-1]:
         return u"Сертификат успешно удален"
@@ -553,20 +553,33 @@ def del_store_cert(cert_index, store, CN):
             var += st
         return var
 
-
-def get_hdimage_containers():
+def get_containers(is_hdimage):
     if versiontuple(get_cspversion()[2]) <= versiontuple("5.0.11455"):
-        find_hdimage_conts = os.popen(
-            f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | iconv -f cp1251 | grep HDIMAGE").readlines()
+        if is_hdimage:
+            find_conts = os.popen(
+                f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | iconv -f cp1251 | grep HDIMAGE").readlines()
+        else:
+            find_conts = os.popen(
+                f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | iconv -f cp1251 | grep '\\\\'").readlines()
     else:
-        find_hdimage_conts = os.popen(
-            f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | grep HDIMAGE").readlines()
-    hdimage_conts = []
-    for cont in find_hdimage_conts:
+        if is_hdimage:
+            find_conts = os.popen(
+                f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | grep HDIMAGE").readlines()
+        else:
+            find_conts = os.popen(
+                f"/opt/cprocsp/bin/{arch}/csptest -keyset -enum_cont -unique -fqcn -verifyc | grep '\\\\'").readlines()
+    conts = []
+    for cont in find_conts:
         cont = cont.split("|")[0].strip()
-        hdimage_conts.append(cont)
-    return hdimage_conts
+        conts.append(cont)
+    return conts
 
+def export_cert(container, path):
+    output = os.popen(f"/opt/cprocsp/bin/amd64/certmgr -export -container '{container}' -dest '{path}'").readlines()
+    for line in output:
+        if "[ErrorCode: 0x00000000]" in line:
+            return u"Сертификат успешно экспортирован"
+    return output
 
 def set_license(cpro_license):
     cpconfig = subprocess.Popen(['/usr/bin/cpconfig-%s' % arch, '-license', '-set', cpro_license],
@@ -575,7 +588,6 @@ def set_license(cpro_license):
     if cpconfig.returncode:
         return output.split("\n")[-1], 1
     return None, 0
-
 
 def install_root_cert(file, root):
     if root == "uRoot":
@@ -589,26 +601,55 @@ def install_root_cert(file, root):
     output = certmgr.communicate()[0]
     if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
         m = re.findall(
-            r'(\d+)-{7}\nИздатель.*?CN=(.+?)[\n,].*?Субъект.*?CN=(.+?)[\n,].*?Серийный номер.*?(0x.+?)\nSHA1 отпечаток.*?(.+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC',
+            r'(\d+)-{7}\n'
+            r'Издатель.*?'
+            r'CN=(.+?)[\n,].*?'
+            r'Субъект.*?CN=(.+?)[\n,].*?'
+            r'Серийный номер.*?(0x.+?)\n'
+            r'SHA1 отпечаток.*?(.+?)\n.*?'
+            r'Выдан.*?(\d.+?)UTC\n'
+            r'Истекает.*?(\d.+?)UTC',
             output.decode('utf-8'), re.MULTILINE + re.DOTALL)
     elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
         m = re.findall(
-            r'(\d+)-{7}\nИздатель.*?CN=(.+?)[\n,].*?Субъект.*?CN=(.+?)[\n,].*?Серийный номер.*?(0x.+?)\nХэш SHA1.*?(.+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC',
+            r'(\d+)-{7}\nИздатель.*?CN=(.+?)[\n,].*?'
+            r'Субъект.*?CN=(.+?)[\n,].*?'
+            r'Серийный номер.*?(0x.+?)\n'
+            r'Хэш SHA1.*?(.+?)\n.*?'
+            r'Выдан.*?(\d.+?)UTC\n'
+            r'Истекает.*?(\d.+?)UTC',
             output.decode('utf-8'), re.MULTILINE + re.DOTALL)
     elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
         m = re.findall(
-            r'(\d+)-{7}\nIssuer.*?CN=(.+?)[\n,].*?Subject.*?CN=(.+?)[\n,].*?Serial.*?(0x.+?)\nSHA1 Hash.*?(.+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC',
+            r'(\d+)-{7}\n'
+            r'Issuer.*?CN=(.+?)[\n,].*?'
+            r'Subject.*?CN=(.+?)[\n,].*?'
+            r'Serial.*?(0x.+?)\n'
+            r'SHA1 Hash.*?(.+?)\n.*?'
+            r'Not valid before.*?(\d.+?)UTC\n'
+            r'Not valid after.*?(\d.+?)UTC',
             output.decode('utf-8'), re.MULTILINE + re.DOTALL)
     elif versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9971"):
         m = re.findall(
-            r'(\d+)-{7}\nИздатель.*?CN=(.+?)[\n,].*?Субъект.*?CN=(.+?)[\n,].*?Серийный номер.*?(0x.+?)\nХэш SHA1.*?(.+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC',
+            r'(\d+)-{7}\n'
+            r'Издатель.*?CN=(.+?)[\n,].*?'
+            r'Субъект.*?CN=(.+?)[\n,].*?'
+            r'Серийный номер.*?(0x.+?)\n'
+            r'Хэш SHA1.*?(.+?)\n.*?'
+            r'Выдан.*?(\d.+?)UTC\n'
+            r'Истекает.*?(\d.+?)UTC',
             output.decode('utf-8'), re.MULTILINE + re.DOTALL)
     else:
         m = re.findall(
-            r'(\d+)-{7}\nIssuer.*?CN=(.+?)[\n,].*?Subject.*?CN=(.+?)[\n,].*?Serial.*?(0x.+?)\nSHA1 Hash.*?(.+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC',
+            r'(\d+)-{7}\n'
+            r'Issuer.*?CN=(.+?)[\n,].*?'
+            r'Subject.*?CN=(.+?)[\n,].*?'
+            r'Serial.*?(0x.+?)\n'
+            r'SHA1 Hash.*?(.+?)\n.*?'
+            r'Not valid before.*?(\d.+?)UTC\n'
+            r'Not valid after.*?(\d.+?)UTC',
             output.decode('utf-8'), re.MULTILINE + re.DOTALL)
     return m
-
 
 def install_crl(file, root):
     if root == "uRoot":
@@ -621,19 +662,31 @@ def install_crl(file, root):
             stdout=subprocess.PIPE)
     output = certmgr.communicate()[0]
     if versiontuple(get_cspversion()[2]) > versiontuple("5.0.11455"):
-        m = re.findall(r'(\d+)-{7}.+?CN=(.+?)[\n,].*?Выпущен.*?: (\d.+?)UTC\nИстекает.*?: (\d.+?)UTC',
+        m = re.findall(r'(\d+)-{7}.+?'
+                       r'CN=(.+?)[\n,].*?'
+                       r'Выпущен.*?: (\d.+?)UTC\n'
+                       r'Истекает.*?: (\d.+?)UTC',
                        output.decode('utf-8'),
                        re.MULTILINE + re.DOTALL)
     elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
-        m = re.findall(r'(\d+)-{7}.+?CN=(.+?)[\n,].*?ThisUpdate: (\d.+?)UTC\nNextUpdate: (\d.+?)UTC',
+        m = re.findall(r'(\d+)-{7}.+?'
+                       r'CN=(.+?)[\n,].*?'
+                       r'ThisUpdate: (\d.+?)UTC\n'
+                       r'NextUpdate: (\d.+?)UTC',
                        output.decode('utf-8'),
                        re.MULTILINE + re.DOTALL)
     elif versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9971"):
-        m = re.findall(r'(\d+)-{7}.+?CN=(.+?)[\n,].*?Выпущен.*?: (\d.+?)UTC\nИстекает.*?: (\d.+?)UTC',
+        m = re.findall(r'(\d+)-{7}.+?'
+                       r'CN=(.+?)[\n,].*?'
+                       r'Выпущен.*?: (\d.+?)UTC\n'
+                       r'Истекает.*?: (\d.+?)UTC',
                        output.decode('utf-8'),
                        re.MULTILINE + re.DOTALL)
     else:
-        m = re.findall(r'(\d+)-{7}.+?CN=(.+?)[\n,].*?ThisUpdate: (\d.+?)UTC\nNextUpdate: (\d.+?)UTC',
+        m = re.findall(r'(\d+)-{7}.+?'
+                       r'CN=(.+?)[\n,].*?'
+                       r'ThisUpdate: (\d.+?)UTC\n'
+                       r'NextUpdate: (\d.+?)UTC',
                        output.decode('utf-8'),
                        re.MULTILINE + re.DOTALL)
     return m
@@ -655,23 +708,58 @@ def get_store_certs(store):
         output = certmgr.communicate()[0].decode("utf-8")
         if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
             m = re.findall(
-                r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nSHA1 отпечаток.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC',
+                r'(\d+)-{7}\n'
+                r'Издатель.*?: (.+?)\n.*?'
+                r'Субъект.*?: (.+?)\n.*?'
+                r'Серийный номер.*?: (0x\w+?)\n'
+                r'SHA1 отпечаток.*?(\w+?)\n.*?'
+                r'Идентификатор ключа.*?: (.+?)\n.*?'
+                r'Выдан.*?(\d.+?)UTC\n'
+                r'Истекает.*?(\d.+?)UTC',
                 output, re.MULTILINE + re.DOTALL)
         elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
             m = re.findall(
-                r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nХэш SHA1.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC',
+                r'(\d+)-{7}\n'
+                r'Издатель.*?: (.+?)\n.*?'
+                r'Субъект.*?: (.+?)\n.*?'
+                r'Серийный номер.*?: (0x\w+?)\n'
+                r'Хэш SHA1.*?(\w+?)\n.*?'
+                r'Идентификатор ключа.*?: (.+?)\n.*?'
+                r'Выдан.*?(\d.+?)UTC\n'
+                r'Истекает.*?(\d.+?)UTC',
                 output, re.MULTILINE + re.DOTALL)
         elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
             m = re.findall(
-                r'(\d+)-{7}\nIssuer.*?: (.+?)\n.*?Subject.*?: (.+?)\n.*?Serial.*?: (0x\w+?)\nSHA1 Hash.*?(\w+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC',
+                r'(\d+)-{7}\n'
+                r'Issuer.*?: (.+?)\n.*?'
+                r'Subject.*?: (.+?)\n.*?'
+                r'Serial.*?: (0x\w+?)\n'
+                r'SHA1 Hash.*?(\w+?)\n.*?'
+                r'SubjKeyID.*?: (.+?)\n.*?'
+                r'Not valid before.*?(\d.+?)UTC\n'
+                r'Not valid after.*?(\d.+?)UTC',
                 output, re.MULTILINE + re.DOTALL)
         elif versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9971"):
             m = re.findall(
-                r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nХэш SHA1.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC',
+                r'(\d+)-{7}\n'
+                r'Издатель.*?: (.+?)\n.*?'
+                r'Субъект.*?: (.+?)\n.*?'
+                r'Серийный номер.*?: (0x\w+?)\n'
+                r'Хэш SHA1.*?(\w+?)\n.*?'
+                r'Идентификатор ключа.*?: (.+?)\n.*?'
+                r'Выдан.*?(\d.+?)UTC\n'
+                r'Истекает.*?(\d.+?)UTC',
                 output, re.MULTILINE + re.DOTALL)
         else:
             m = re.findall(
-                r'(\d+)-{7}\nIssuer.*?: (.+?)\n.*?Subject.*?: (.+?)\n.*?Serial.*?: (0x\w+?)\nSHA1 Hash.*?(\w+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC',
+                r'(\d+)-{7}\n'
+                r'Issuer.*?: (.+?)\n.*?'
+                r'Subject.*?: (.+?)\n.*?'
+                r'Serial.*?: (0x\w+?)\n'
+                r'SHA1 Hash.*?(\w+?)\n.*?'
+                r'SubjKeyID.*?: (.+?)\n.*?'
+                r'Not valid before.*?(\d.+?)UTC\n'
+                r'Not valid after.*?(\d.+?)UTC',
                 output, re.MULTILINE + re.DOTALL)
     else:
         if versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9708"):
@@ -689,7 +777,14 @@ def get_store_certs(store):
                 lists[i] = f"{counter}-------\n" + lists[i]
                 if 'Назначение/EKU' in lists[i]:
                     part1 = re.findall(
-                        r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nSHA1 отпечаток.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?',
+                        r'(\d+)-{7}\n'
+                        r'Издатель.*?: (.+?)\n.*?'
+                        r'Субъект.*?: (.+?)\n.*?'
+                        r'Серийный номер.*?: (0x\w+?)\n'
+                        r'SHA1 отпечаток.*?(\w+?)\n.*?'
+                        r'Идентификатор ключа.*?: (.+?)\n.*?'
+                        r'Выдан.*?(\d.+?)UTC\n'
+                        r'Истекает.*?(\d.+?)UTC.+?',
                         lists[i], re.MULTILINE + re.DOTALL)
                     part1 = list(part1[0])
                     part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
@@ -707,7 +802,14 @@ def get_store_certs(store):
                     m.append(part1)
                 else:
                     lists[i] = re.findall(
-                        r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nSHA1 отпечаток.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?\n',
+                        r'(\d+)-{7}\n'
+                        r'Издатель.*?: (.+?)\n.*?'
+                        r'Субъект.*?: (.+?)\n.*?'
+                        r'Серийный номер.*?: (0x\w+?)\n'
+                        r'SHA1 отпечаток.*?(\w+?)\n.*?'
+                        r'Идентификатор ключа.*?: (.+?)\n.*?'
+                        r'Выдан.*?(\d.+?)UTC\n'
+                        r'Истекает.*?(\d.+?)UTC.+?\n',
                         lists[i], re.MULTILINE + re.DOTALL)
                     m.append(lists[i][0])
                 counter += 1
@@ -719,7 +821,14 @@ def get_store_certs(store):
                 lists[i] = f"{counter}-------\n" + lists[i]
                 if 'Назначение/EKU' in lists[i]:
                     part1 = re.findall(
-                        r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nХэш SHA1.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?, lists[i]',
+                        r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?'
+                        r'Субъект.*?: (.+?)\n.*?'
+                        r'Серийный номер.*?: (0x\w+?)\n'
+                        r'Хэш SHA1.*?(\w+?)\n.*?'
+                        r'Идентификатор ключа.*?: (.+?)\n.*?'
+                        r'Выдан.*?(\d.+?)UTC\n'
+                        r'Истекает.*?(\d.+?)UTC.+?',
+                        lists[i],
                         re.MULTILINE + re.DOTALL)
                     part1 = list(part1[0])
                     part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
@@ -737,7 +846,14 @@ def get_store_certs(store):
                     m.append(part1)
                 else:
                     lists[i] = re.findall(
-                        r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nХэш SHA1.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?\n',
+                        r'(\d+)-{7}\n'
+                        r'Издатель.*?: (.+?)\n.*?'
+                        r'Субъект.*?: (.+?)\n.*?'
+                        r'Серийный номер.*?: (0x\w+?)\n'
+                        r'Хэш SHA1.*?(\w+?)\n.*?'
+                        r'Идентификатор ключа.*?: (.+?)\n.*?'
+                        r'Выдан.*?(\d.+?)UTC\n'
+                        r'Истекает.*?(\d.+?)UTC.+?\n',
                         output, re.MULTILINE + re.DOTALL)
                     m.append(lists[i][0])
                 counter += 1
@@ -749,7 +865,14 @@ def get_store_certs(store):
                 lists[i] = f"{counter}-------\n" + lists[i]
                 if 'Extended Key Usage' in lists[i]:
                     part1 = re.findall(
-                        r'(\d+)-{7}\nIssuer.*?: (.+?)\n.*?Subject.*?: (.+?)\n.*?Serial.*?: (0x\w+?)\nSHA1 Hash.*?(\w+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC.+?\n',
+                        r'(\d+)-{7}\n'
+                        r'Issuer.*?: (.+?)\n.*?'
+                        r'Subject.*?: (.+?)\n.*?'
+                        r'Serial.*?: (0x\w+?)\n'
+                        r'SHA1 Hash.*?(\w+?)\n.*?'
+                        r'SubjKeyID.*?: (.+?)\n.*?'
+                        r'Not valid before.*?(\d.+?)UTC\n'
+                        r'Not valid after.*?(\d.+?)UTC.+?\n',
                         lists[i], re.MULTILINE + re.DOTALL)
                     part1 = list(part1[0])
                     part2 = re.split(r'Extended Key Usage', lists[i], re.MULTILINE + re.DOTALL)[1:]
@@ -766,7 +889,14 @@ def get_store_certs(store):
                     m.append(part1)
                 else:
                     lists[i] = re.findall(
-                        r'(\d+)-{7}\nIssuer.*?: (.+?)\n.*?Subject.*?: (.+?)\n.*?Serial.*?: (0x\w+?)\nSHA1 Hash.*?(\w+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC.+?\n',
+                        r'(\d+)-{7}\n'
+                        r'Issuer.*?: (.+?)\n.*?'
+                        r'Subject.*?: (.+?)\n.*?'
+                        r'Serial.*?: (0x\w+?)\n'
+                        r'SHA1 Hash.*?(\w+?)\n.*?'
+                        r'SubjKeyID.*?: (.+?)\n.*?'
+                        r'Not valid before.*?(\d.+?)UTC\n'
+                        r'Not valid after.*?(\d.+?)UTC.+?\n',
                         lists[i], re.MULTILINE + re.DOTALL)
                     m.append(lists[i][0])
                 counter += 1
@@ -778,7 +908,14 @@ def get_store_certs(store):
                 lists[i] = f"{counter}-------\n" + lists[i]
                 if 'Назначение/EKU' in lists[i]:
                     part1 = re.findall(
-                        r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nХэш SHA1.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?\n',
+                        r'(\d+)-{7}\n'
+                        r'Издатель.*?: (.+?)\n.*?'
+                        r'Субъект.*?: (.+?)\n.*?'
+                        r'Серийный номер.*?: (0x\w+?)\n'
+                        r'Хэш SHA1.*?(\w+?)\n.*?'
+                        r'Идентификатор ключа.*?: (.+?)\n.*?'
+                        r'Выдан.*?(\d.+?)UTC\n'
+                        r'Истекает.*?(\d.+?)UTC.+?\n',
                         output, re.MULTILINE + re.DOTALL)
                     part1 = list(part1[0])
                     part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
@@ -795,7 +932,14 @@ def get_store_certs(store):
                     m.append(part1)
                 else:
                     lists[i] = re.findall(
-                        r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nХэш SHA1.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?\n',
+                        r'(\d+)-{7}\n'
+                        r'Издатель.*?: (.+?)\n.*?'
+                        r'Субъект.*?: (.+?)\n.*?'
+                        r'Серийный номер.*?: (0x\w+?)\n'
+                        r'Хэш SHA1.*?(\w+?)\n.*?'
+                        r'Идентификатор ключа.*?: (.+?)\n.*?'
+                        r'Выдан.*?(\d.+?)UTC\n'
+                        r'Истекает.*?(\d.+?)UTC.+?\n',
                         output, re.MULTILINE + re.DOTALL)
                     m.append(lists[i][0])
                 counter += 1
@@ -807,7 +951,14 @@ def get_store_certs(store):
                 lists[i] = f"{counter}-------\n" + lists[i]
                 if 'Extended Key Usage' in lists[i]:
                     part1 = re.findall(
-                        r'(\d+)-{7}\nIssuer.*?: (.+?)\n.*?Subject.*?: (.+?)\n.*?Serial.*?: (0x\w+?)\nSHA1 Hash.*?(\w+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC.+?\n',
+                        r'(\d+)-{7}\n'
+                        r'Issuer.*?: (.+?)\n.*?'
+                        r'Subject.*?: (.+?)\n.*?'
+                        r'Serial.*?: (0x\w+?)\n'
+                        r'SHA1 Hash.*?(\w+?)\n.*?'
+                        r'SubjKeyID.*?: (.+?)\n.*?'
+                        r'Not valid before.*?(\d.+?)UTC\n'
+                        r'Not valid after.*?(\d.+?)UTC.+?\n',
                         lists[i], re.MULTILINE + re.DOTALL)
                     part1 = list(part1[0])
                     part2 = re.split(r'Extended Key Usage', lists[i], re.MULTILINE + re.DOTALL)[1:]
@@ -824,7 +975,14 @@ def get_store_certs(store):
                     m.append(part1)
                 else:
                     lists[i] = re.findall(
-                        r'(\d+)-{7}\nIssuer.*?: (.+?)\n.*?Subject.*?: (.+?)\n.*?Serial.*?: (0x\w+?)\nSHA1 Hash.*?(\w+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC.+?\n',
+                        r'(\d+)-{7}\n'
+                        r'Issuer.*?: (.+?)\n.*?'
+                        r'Subject.*?: (.+?)\n.*?'
+                        r'Serial.*?: (0x\w+?)\n'
+                        r'SHA1 Hash.*?(\w+?)\n.*?'
+                        r'SubjKeyID.*?: (.+?)\n.*?'
+                        r'Not valid before.*?(\d.+?)UTC\n'
+                        r'Not valid after.*?(\d.+?)UTC.+?\n',
                         lists[i], re.MULTILINE + re.DOTALL)
                     m.append(lists[i][0])
                 counter += 1
@@ -836,16 +994,27 @@ def list_crls():
                                stdout=subprocess.PIPE)
     output = certmgr.communicate()[0]
     if versiontuple(get_cspversion()[2]) > versiontuple("5.0.11455"):
-        m = re.findall(r'(\d+)-{7}.+?CN=(.+?)[\n,].*?Выпущен.+?: (\d.+?)UTC\nИстекает.+?: (\d.+?)UTC',
+        m = re.findall(r'(\d+)-{7}.+?'
+                       r'CN=(.+?)[\n,].*?'
+                       r'Выпущен.+?: (\d.+?)UTC\n'
+                       r'Истекает.+?: (\d.+?)UTC',
                        output.decode('utf-8'), re.MULTILINE + re.DOTALL)
     elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
-        m = re.findall(r'(\d+)-{7}.+?CN=(.+?)[\n,].*?ThisUpdate: (\d.+?)UTC\nNextUpdate: (\d.+?)UTC',
+        m = re.findall(r'(\d+)-{7}.+?'
+                       r'CN=(.+?)[\n,].*?'
+                       r'ThisUpdate: (\d.+?)UTC\nNextUpdate: (\d.+?)UTC',
                        output.decode('utf-8'), re.MULTILINE + re.DOTALL)
     elif versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9971"):
-        m = re.findall(r'(\d+)-{7}.+?CN=(.+?)[\n,].*?Выпущен.+?: (\d.+?)UTC\nИстекает.+?: (\d.+?)UTC',
+        m = re.findall(r'(\d+)-{7}.+?'
+                       r'CN=(.+?)[\n,].*?'
+                       r'Выпущен.+?: (\d.+?)UTC\n'
+                       r'Истекает.+?: (\d.+?)UTC',
                        output.decode('utf-8'), re.MULTILINE + re.DOTALL)
     else:
-        m = re.findall(r'(\d+)-{7}.+?CN=(.+?)[\n,].*?ThisUpdate: (\d.+?)UTC\nNextUpdate: (\d.+?)UTC',
+        m = re.findall(r'(\d+)-{7}.+?'
+                       r'CN=(.+?)[\n,].*?'
+                       r'ThisUpdate: (\d.+?)UTC\n'
+                       r'NextUpdate: (\d.+?)UTC',
                        output.decode('utf-8'), re.MULTILINE + re.DOTALL)
     return m
 
@@ -856,7 +1025,13 @@ def list_root_certs():
     output = certmgr.communicate()[0]
     if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
         m = re.findall(
-            r'(\d+)-{7}\nИздатель.*?CN=(.+?)[\n,].*?Субъект.*?CN=(.+?)[\n,].*?Серийный номер.*?(0x.+?)\nSHA1 отпечаток.*?(.+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC',
+            r'(\d+)-{7}\n'
+            r'Издатель.*?CN=(.+?)[\n,].*?'
+            r'Субъект.*?CN=(.+?)[\n,].*?'
+            r'Серийный номер.*?(0x.+?)\n'
+            r'SHA1 отпечаток.*?(.+?)\n.*?'
+            r'Выдан.*?(\d.+?)UTC\n'
+            r'Истекает.*?(\d.+?)UTC',
             output.decode('utf-8'), re.MULTILINE + re.DOTALL)
     elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
         m = re.findall(
@@ -918,7 +1093,14 @@ def list_cert(cert):
             lists[i] = f"{counter}-------\n" + lists[i]
             if 'Назначение/EKU' in lists[i]:
                 part1 = re.findall(
-                    r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nSHA1 отпечаток.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?',
+                    r'(\d+)-{7}\n'
+                    r'Издатель.*?: (.+?)\n.*?'
+                    r'Субъект.*?: (.+?)\n.*?'
+                    r'Серийный номер.*?: (0x\w+?)\n'
+                    r'SHA1 отпечаток.*?(\w+?)\n.*?'
+                    r'Идентификатор ключа.*?: (.+?)\n.*?'
+                    r'Выдан.*?(\d.+?)UTC\n'
+                    r'Истекает.*?(\d.+?)UTC.+?',
                     lists[i], re.MULTILINE + re.DOTALL)
                 part1 = list(part1[0])
                 part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
@@ -936,7 +1118,14 @@ def list_cert(cert):
                 m.append(part1)
             else:
                 lists[i] = re.findall(
-                    r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nSHA1 отпечаток.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?\n',
+                    r'(\d+)-{7}\n'
+                    r'Издатель.*?: (.+?)\n.*?'
+                    r'Субъект.*?: (.+?)\n.*?'
+                    r'Серийный номер.*?: (0x\w+?)\n'
+                    r'SHA1 отпечаток.*?(\w+?)\n.*?'
+                    r'Идентификатор ключа.*?: (.+?)\n.*?'
+                    r'Выдан.*?(\d.+?)UTC\n'
+                    r'Истекает.*?(\d.+?)UTC.+?\n',
                     lists[i], re.MULTILINE + re.DOTALL)
                 m.append(lists[i][0])
             counter += 1
@@ -948,7 +1137,14 @@ def list_cert(cert):
             lists[i] = f"{counter}-------\n" + lists[i]
             if 'Назначение/EKU' in lists[i]:
                 part1 = re.findall(
-                    r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nХэш SHA1.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?, lists[i]',
+                    r'(\d+)-{7}\n'
+                    r'Издатель.*?: (.+?)\n.*?'
+                    r'Субъект.*?: (.+?)\n.*?'
+                    r'Серийный номер.*?: (0x\w+?)\n'
+                    r'Хэш SHA1.*?(\w+?)\n.*?'
+                    r'Идентификатор ключа.*?: (.+?)\n.*?'
+                    r'Выдан.*?(\d.+?)UTC\n'
+                    r'Истекает.*?(\d.+?)UTC.+?', lists[i],
                     re.MULTILINE + re.DOTALL)
                 part1 = list(part1[0])
                 part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
@@ -966,7 +1162,14 @@ def list_cert(cert):
                 m.append(part1)
             else:
                 lists[i] = re.findall(
-                    r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nХэш SHA1.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?\n',
+                    r'(\d+)-{7}\n'
+                    r'Издатель.*?: (.+?)\n.*?'
+                    r'Субъект.*?: (.+?)\n.*?'
+                    r'Серийный номер.*?: (0x\w+?)\n'
+                    r'Хэш SHA1.*?(\w+?)\n.*?'
+                    r'Идентификатор ключа.*?: (.+?)\n.*?'
+                    r'Выдан.*?(\d.+?)UTC\n'
+                    r'Истекает.*?(\d.+?)UTC.+?\n',
                     output, re.MULTILINE + re.DOTALL)
                 m.append(lists[i][0])
             counter += 1
@@ -978,7 +1181,14 @@ def list_cert(cert):
             lists[i] = f"{counter}-------\n" + lists[i]
             if 'Extended Key Usage' in lists[i]:
                 part1 = re.findall(
-                    r'(\d+)-{7}\nIssuer.*?: (.+?)\n.*?Subject.*?: (.+?)\n.*?Serial.*?: (0x\w+?)\nSHA1 Hash.*?(\w+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC.+?\n',
+                    r'(\d+)-{7}\n'
+                    r'Issuer.*?: (.+?)\n.*?'
+                    r'Subject.*?: (.+?)\n.*?'
+                    r'Serial.*?: (0x\w+?)\n'
+                    r'SHA1 Hash.*?(\w+?)\n.*?'
+                    r'SubjKeyID.*?: (.+?)\n.*?'
+                    r'Not valid before.*?(\d.+?)UTC\n'
+                    r'Not valid after.*?(\d.+?)UTC.+?\n',
                     lists[i], re.MULTILINE + re.DOTALL)
                 part1 = list(part1[0])
                 part2 = re.split(r'Extended Key Usage', lists[i], re.MULTILINE + re.DOTALL)[1:]
@@ -995,7 +1205,14 @@ def list_cert(cert):
                 m.append(part1)
             else:
                 lists[i] = re.findall(
-                    r'(\d+)-{7}\nIssuer.*?: (.+?)\n.*?Subject.*?: (.+?)\n.*?Serial.*?: (0x\w+?)\nSHA1 Hash.*?(\w+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC.+?\n',
+                    r'(\d+)-{7}\n'
+                    r'Issuer.*?: (.+?)\n.*?'
+                    r'Subject.*?: (.+?)\n.*?'
+                    r'Serial.*?: (0x\w+?)\n'
+                    r'SHA1 Hash.*?(\w+?)\n.*?'
+                    r'SubjKeyID.*?: (.+?)\n.*?'
+                    r'Not valid before.*?(\d.+?)UTC\n'
+                    r'Not valid after.*?(\d.+?)UTC.+?\n',
                     lists[i], re.MULTILINE + re.DOTALL)
                 m.append(lists[i][0])
             counter += 1
@@ -1007,7 +1224,14 @@ def list_cert(cert):
             lists[i] = f"{counter}-------\n" + lists[i]
             if 'Назначение/EKU' in lists[i]:
                 part1 = re.findall(
-                    r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nХэш SHA1.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?\n',
+                    r'(\d+)-{7}\n'
+                    r'Издатель.*?: (.+?)\n.*?'
+                    r'Субъект.*?: (.+?)\n.*?'
+                    r'Серийный номер.*?: (0x\w+?)\n'
+                    r'Хэш SHA1.*?(\w+?)\n.*?'
+                    r'Идентификатор ключа.*?: (.+?)\n.*?'
+                    r'Выдан.*?(\d.+?)UTC\n'
+                    r'Истекает.*?(\d.+?)UTC.+?\n',
                     output, re.MULTILINE + re.DOTALL)
                 part1 = list(part1[0])
                 part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
@@ -1024,7 +1248,14 @@ def list_cert(cert):
                 m.append(part1)
             else:
                 lists[i] = re.findall(
-                    r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?Субъект.*?: (.+?)\n.*?Серийный номер.*?: (0x\w+?)\nХэш SHA1.*?(\w+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC.+?\n',
+                    r'(\d+)-{7}\n'
+                    r'Издатель.*?: (.+?)\n.*?'
+                    r'Субъект.*?: (.+?)\n.*?'
+                    r'Серийный номер.*?: (0x\w+?)\n'
+                    r'Хэш SHA1.*?(\w+?)\n.*?'
+                    r'Идентификатор ключа.*?: (.+?)\n.*?'
+                    r'Выдан.*?(\d.+?)UTC\n'
+                    r'Истекает.*?(\d.+?)UTC.+?\n',
                     output, re.MULTILINE + re.DOTALL)
                 m.append(lists[i][0])
             counter += 1
@@ -1036,7 +1267,14 @@ def list_cert(cert):
             lists[i] = f"{counter}-------\n" + lists[i]
             if 'Extended Key Usage' in lists[i]:
                 part1 = re.findall(
-                    r'(\d+)-{7}\nIssuer.*?: (.+?)\n.*?Subject.*?: (.+?)\n.*?Serial.*?: (0x\w+?)\nSHA1 Hash.*?(\w+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC.+?\n',
+                    r'(\d+)-{7}\n'
+                    r'Issuer.*?: (.+?)\n.*?'
+                    r'Subject.*?: (.+?)\n.*?'
+                    r'Serial.*?: (0x\w+?)\n'
+                    r'SHA1 Hash.*?(\w+?)\n.*?'
+                    r'SubjKeyID.*?: (.+?)\n.*?'
+                    r'Not valid before.*?(\d.+?)UTC\n'
+                    r'Not valid after.*?(\d.+?)UTC.+?\n',
                     lists[i], re.MULTILINE + re.DOTALL)
                 part1 = list(part1[0])
                 part2 = re.split(r'Extended Key Usage', lists[i], re.MULTILINE + re.DOTALL)[1:]
@@ -1053,7 +1291,14 @@ def list_cert(cert):
                 m.append(part1)
             else:
                 lists[i] = re.findall(
-                    r'(\d+)-{7}\nIssuer.*?: (.+?)\n.*?Subject.*?: (.+?)\n.*?Serial.*?: (0x\w+?)\nSHA1 Hash.*?(\w+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC.+?\n',
+                    r'(\d+)-{7}\n'
+                    r'Issuer.*?: (.+?)\n.*?'
+                    r'Subject.*?: (.+?)\n.*?'
+                    r'Serial.*?: (0x\w+?)\n'
+                    r'SHA1 Hash.*?(\w+?)\n.*?'
+                    r'SubjKeyID.*?: (.+?)\n.*?'
+                    r'Not valid before.*?(\d.+?)UTC\n'
+                    r'Not valid after.*?(\d.+?)UTC.+?\n',
                     lists[i], re.MULTILINE + re.DOTALL)
                 m.append(lists[i][0])
             counter += 1
@@ -1177,6 +1422,7 @@ class MainMenu(Gtk.MenuBar):
         self.install_root_certs = Gtk.MenuItem(label="_Установка корневых сертификатов", use_underline=True)
         self.install_crl = Gtk.MenuItem(label="_Установка списков отозванных сертификатов", use_underline=True)
         self.write_cert_to_cont = Gtk.MenuItem(label="_Записать сертификат в контейнер", use_underline=True)
+        self.export_cont_cert = Gtk.MenuItem(label="_Экспортировать сертификат из контейнера", use_underline=True)
 
         self.view_root = Gtk.MenuItem(label="_Просмотр корневых сертификатов", use_underline=True)
         self.view_crl = Gtk.MenuItem(label="_Просмотр списков отозванных сертификатов", use_underline=True)
@@ -1191,6 +1437,7 @@ class MainMenu(Gtk.MenuBar):
         file_menu.append(self.install_root_certs)
         file_menu.append(self.install_crl)
         file_menu.append(self.write_cert_to_cont)
+        file_menu.append(self.export_cont_cert)
         file_menu.append(Gtk.SeparatorMenuItem.new())
         file_menu.append(self.view_root)
         file_menu.append(self.view_crl)
@@ -1257,6 +1504,7 @@ class TokenUI(Gtk.Box):
         self.main_menu.view_root.connect("activate", self.view_root)
         self.main_menu.view_crl.connect("activate", self.view_crl)
         self.main_menu.write_cert_to_cont.connect("activate", self.write_cert)
+        self.main_menu.export_cont_cert.connect("activate", self.export_container_cert)
         self.main_menu.actionAbout.connect("activate", self.about_iterate_self)
         self.main_menu.actionUsefull_install.connect("activate", self.usefull_install)
         self.main_menu.actionUsefull_commands.connect("activate", self.usefull_commands)
@@ -1322,11 +1570,14 @@ class TokenUI(Gtk.Box):
         scroll_window.add(box)
         scroll_window.set_size_request(200, 150)
 
-        self.cert_list = Gtk.ListStore(str, str, Gdk.RGBA)
+
+        # NEW model structure = {cert_index: type str, cert_item:, SubjKeyID: type str, color: type Gdk.RGBA}
+        self.cert_list = Gtk.ListStore(str, str, str, Gdk.RGBA)
+        # self.cert_list = Gtk.ListStore(str, str, Gdk.RGBA)
         self.treeview_cert = Gtk.TreeView(model=self.cert_list)
 
         cell = Gtk.CellRendererText()
-        self.treeview_cert_col = Gtk.TreeViewColumn("Выберите контейнер сертификата", cell, text=1, background_rgba=2)
+        self.treeview_cert_col = Gtk.TreeViewColumn("Выберите контейнер сертификата", cell, text=1, background_rgba=3)
         self.treeview_cert.append_column(self.treeview_cert_col)
         self.treeview_cert.get_selection().connect("changed", self.select_cert)
 
@@ -1377,7 +1628,7 @@ class TokenUI(Gtk.Box):
                 certs = get_token_certs(str(self.token))[0]
                 for cert in certs:
                     cert_item = cert.split('|')[0].split('\\')[-1]
-                    self.cert_list.append(["", cert_item, Gdk.RGBA(red=0, green=0, blue=0, alpha=0)])
+                    self.cert_list.append(["", cert_item, "", Gdk.RGBA(red=0, green=0, blue=0, alpha=0)])
             if not self.isToken:  # not isToken?
                 self.cert_install.set_sensitive(True)
                 if self.store == 'uRoot':
@@ -1414,7 +1665,9 @@ class TokenUI(Gtk.Box):
 
                         cert_item = "%s\nвыдан %s\nорганизация %s" % (cert_subject_cn, cert_issuer_cn, cert_subject_o)
 
-                        self.cert_list.append([self.cert_index, cert_item, color])
+                        cert_ID = cert[5]
+
+                        self.cert_list.append([self.cert_index, cert_item, cert_ID, color])
                     except KeyError as e:
                         print(f" Couldn't parse {e}")
         return True
@@ -1487,8 +1740,7 @@ class TokenUI(Gtk.Box):
                 self.cert_install.set_sensitive(False)
         else:
             if self.info_class.delete_from_nonToken() == Gtk.ResponseType.OK:
-                ret = del_store_cert(self.cert_index,
-                                     self.store, self.CN)
+                ret = del_store_cert(self.store, self.certID)
                 if ret == u"Сертификат успешно удален":
                     self.info_class.print_simple_info(ret)
                 else:
@@ -1528,7 +1780,7 @@ class TokenUI(Gtk.Box):
         else:
             try:
                 self.handler_id_view_cert = self.cert_view.connect("clicked", self.view_cert)
-                self.CN = str(model.get_value(iter, 1))
+                self.certID = str(model.get_value(iter, 2))
             except Exception as e:
                 pass
 
@@ -1576,10 +1828,10 @@ class TokenUI(Gtk.Box):
             cert_serial = line[3][2:]
             item = '<b>Серийный номер</b>: %s' % cert_serial
             cert_view.cert_listview.append([item, color])
-            not_valid_before = datetime.strptime(line[5], '%d/%m/%Y  %H:%M:%S ')
+            not_valid_before = datetime.strptime(line[6], '%d/%m/%Y  %H:%M:%S ')
             item = '<b>Не действителен до</b>: %s' % datetime.strftime(not_valid_before, '%d.%m.%Y %H:%M:%S')
             cert_view.cert_listview.append([item, color])
-            not_valid_after = datetime.strptime(line[6], '%d/%m/%Y  %H:%M:%S ')
+            not_valid_after = datetime.strptime(line[7], '%d/%m/%Y  %H:%M:%S ')
             color = Gdk.RGBA(red=0, green=0, blue=0, alpha=0)  # transparent to apply system colors
             if not_valid_after < datetime.utcnow():
                 color = Gdk.RGBA(red=252, green=133, blue=133, alpha=1)
@@ -1588,13 +1840,13 @@ class TokenUI(Gtk.Box):
             item = '<b>Расширенное использование ключа</b>: '
             cert_view.cert_listview.append([item, color])
             try:
-                if type(line[7]) == str:
-                    lines = line[7].split('\n')
+                if type(line[8]) == str:
+                    lines = line[8].split('\n')
                     for i in range(0, len(lines)):
                         lines[i] = lines[i].strip()
                     ext_key = lines
-                elif type(line[7]) == list:
-                    ext_key = line[7]
+                elif type(line[8]) == list:
+                    ext_key = line[8]
             except IndexError:
                 ext_key = ['<i>Не имеет</i>']
             for oid in ext_key:
@@ -1639,7 +1891,7 @@ class TokenUI(Gtk.Box):
         win = InfoClass()
         if win.install_HDIMAGE:
             containers = Gtk.ListStore(str, bool)
-            conts = get_hdimage_containers()
+            conts = get_containers(is_hdimage=True)
             if len(conts) > 0:
                 for cont in conts:
                     containers.append([cont, False])
@@ -1701,6 +1953,55 @@ class TokenUI(Gtk.Box):
             else:
                 win.print_error("Хранилища в hdimage не обнаружены")
 
+        else:
+            win.print_simple_info("Операция отменена пользователем")
+
+    def export_container_cert(self, widget):
+        win = InfoClass()
+        if win.install_HDIMAGE:
+            containers = Gtk.ListStore(str, bool)
+            conts = get_containers(is_hdimage=False)
+            if len(conts) > 0:
+                for cont in conts:
+                    containers.append([cont, False])
+                if win.select_container_to_import_cert(containers):
+                    selected_containers = win.return_liststore_all_containers()
+                    if len(selected_containers) > 0:
+                        selected_store = None
+                        selected_stores = 0
+                        for cont in selected_containers:
+                            if cont[1]:
+                                selected_store = cont[0]
+                                selected_stores += 1
+                        if selected_stores == 1:
+                            name = selected_store.split("\\")
+                            name = name[-1:][0]
+                            out_name = win.enter_cert_name(self, name)
+                            if out_name != "empty" and out_name != "canceled":
+                                cert_name = out_name
+                                if "." in cert_name:
+                                    cert_name = cert_name.split(".")[0]
+                                path = win.choose_folder_dialog(self)
+                                if path:
+                                    output = export_cert(selected_store, f"{path}/{cert_name}.cer")
+                                    if output == u"Сертификат успешно экспортирован":
+                                        win.print_simple_info("Сертификат успешно экспортирован")
+                                    else:
+                                        win.print_big_error(output, 500, 300)
+                                else:
+                                    win.print_simple_info("Операция отменена пользователем")
+                            elif out_name == "canceled":
+                                win.print_simple_info("Операция отменена пользователем")
+                            elif out_name == "empty":
+                                win.print_error("Не введено имя")
+                        else:
+                            win.print_error("Пожалуйста, выберите только 1 контейнер")
+                    else:
+                        win.print_error("Не выбрано контейнеров")
+                else:
+                    win.print_simple_info("Операция отменена пользователем")
+            else:
+                win.print_error("Хранилища не обнаружены")
         else:
             win.print_simple_info("Операция отменена пользователем")
 
@@ -2426,6 +2727,33 @@ class InfoClass(Gtk.Window):
         elif response == Gtk.ResponseType.CANCEL:
             return "canceled"
 
+    def enter_cert_name(self, widget, old_name):
+        dialogWindow = Gtk.MessageDialog(parent=self,
+                                         modal=True, destroy_with_parent=True,
+                                         message_type=Gtk.MessageType.QUESTION,
+                                         buttons=Gtk.ButtonsType.OK_CANCEL,
+                                         text=f"Новое имя:")
+        dialogWindow.set_title("Имя сертификата *.cer")
+        dialogWindow.set_border_width(5)
+        dialogWindow.set_size_request(300, 100)
+        dialogWindow.set_resizable(True)
+
+        dialogBox = dialogWindow.get_content_area()
+        nameEntry = Gtk.Entry()
+        nameEntry.set_text(f"{old_name}_cert")
+        dialogBox.pack_end(nameEntry, False, False, 0)
+        dialogWindow.show_all()
+        response = dialogWindow.run()
+        cert_name = nameEntry.get_text()
+        dialogWindow.destroy()
+        if response == Gtk.ResponseType.OK:
+            if cert_name != '':
+                return cert_name
+            else:
+                return "empty"
+        elif response == Gtk.ResponseType.CANCEL:
+            return "canceled"
+
     def open_root_certs(self, widget):
         dialog = Gtk.FileChooserDialog(title="Выберите файл(ы)", parent=self,
                                        action=Gtk.FileChooserAction.OPEN,
@@ -2451,10 +2779,12 @@ class InfoClass(Gtk.Window):
                 root = "uRoot"
             if not file_names:
                 return
-            root_view = ViewCert()
-            root_view.set_model(Gtk.ListStore(str, Gdk.RGBA), True)
+
             for file in file_names:
+                root_view = ViewCert()
+                root_view.set_model(Gtk.ListStore(str, Gdk.RGBA), True)
                 root_info = install_root_cert(file, root)
+
                 for line in root_info:
                     not_valid_before = datetime.strptime(line[5], '%d/%m/%Y  %H:%M:%S ')
                     not_valid_after = datetime.strptime(line[6], '%d/%m/%Y  %H:%M:%S ')
@@ -2594,22 +2924,22 @@ class InfoClass(Gtk.Window):
                 dialogWindow.destroy()
                 return False
 
-    def install_container_from_hdimage(self, liststore):
+    def select_container_to_import_cert(self, liststore):
         # сделать окно выбора контейнера из списка распознанных системой
         # команда из ТГ по экспортированияю контейнера попробовать выполнить автоинсталл,
         # в случае неудачи сделать по БЗ с явным указание открытого ключа
-        self.liststore_hdimage_containers = liststore
+        self.liststore_all_containers = liststore
         dialogWindow = Gtk.MessageDialog(parent=self,
                                          modal=True, destroy_with_parent=True,
                                          message_type=Gtk.MessageType.QUESTION,
                                          buttons=Gtk.ButtonsType.OK_CANCEL)
-        dialogWindow.set_title("Выберите контейнер из hdimage")
+        dialogWindow.set_title("Выберите контейнер")
         dialogWindow.set_resizable(True)
         dialogBox = dialogWindow.get_content_area()
 
-        treeview = Gtk.TreeView(model=self.liststore_hdimage_containers)
+        treeview = Gtk.TreeView(model=self.liststore_all_containers)
         max_len = 0
-        for elem in self.liststore_hdimage_containers:
+        for elem in self.liststore_all_containers:
             if max_len < len(elem[0]):
                 max_len = len(elem[0])
         renderer_text = Gtk.CellRendererText()
@@ -2617,7 +2947,7 @@ class InfoClass(Gtk.Window):
         treeview.append_column(column_text)
 
         renderer_toggle = Gtk.CellRendererToggle()
-        renderer_toggle.connect("toggled", self.on_cell_hdimage_toggled)
+        renderer_toggle.connect("toggled", self.on_cell_all_toggled)
 
         column_toggle = Gtk.TreeViewColumn("Выбранный", renderer_toggle, active=1)
         treeview.append_column(column_toggle)
@@ -2861,33 +3191,19 @@ class InfoClass(Gtk.Window):
     def return_output_code_token(self):
         return self.output_code_token
 
-    def choose_folder_container_dialog(self, widget, secretnet):
-        dialog = Gtk.FileChooserDialog(title="Выберите контейнер", parent=self,
+    def choose_folder_dialog(self, widget):
+        dialog = Gtk.FileChooserDialog(title="Выберите директорию", parent=self,
                                        action=Gtk.FileChooserAction.SELECT_FOLDER,
                                        )
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                           "Выбрать контейнер", Gtk.ResponseType.OK)
+                           "Выбрать директорию", Gtk.ResponseType.OK)
         dialog.set_default_size(800, 400)
         # если на ПК не обнаружен СН то стандартная папка по умолчанию /run/media/USERNAME, иначе будет другая папка
         # по дефолту - /media/
-        if not secretnet:
-            # сделан такой кастомный поиск, тк у людей может быть имя домена до имени пользователя (зависит от
-            # специфики, но данный способ исключает вариант, что будет потерян путь из-за присутствия домена уровнем
-            # выше имени пользователя
-            domain_name = os.popen("echo $USERNAME").readlines()[0]
-            if "\\" in domain_name:
-                domain_name = domain_name.split("\\")[1]
-            elif "@" in domain_name:
-                domain_name = domain_name.split("@")[0]
-            find_name = os.popen(f"find /run/media/ -name {domain_name}").readlines()[0].strip()
-            dialog.set_current_folder(f"{find_name}")
-        else:
-            dialog.set_current_folder(f"/media/")
+        dialog.set_current_folder(f"/home")
         response = dialog.run()
-
         if response == Gtk.ResponseType.OK:
             file_name = dialog.get_filename()
-
             dialog.destroy()
             return file_name
         elif response == Gtk.ResponseType.CANCEL:
@@ -2964,8 +3280,8 @@ class InfoClass(Gtk.Window):
                 pin = pinEntry.get_text()
                 ROOTPSW = pin  # сделать окно диалог с запросом рут пароля.
                 os.system("""su - root -c 'cat << EOF > /etc/udev/rules.d/87-domain_usb.rules \n""" \
-                """ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"\n""" \
-                """EOF'""" + f"<<< '{ROOTPSW}'")
+                          """ENV{ID_FS_USAGE}=="filesystem|other|crypto", ENV{UDISKS_FILESYSTEM_SHARED}="1"\n""" \
+                          """EOF'""" + f"<<< '{ROOTPSW}'")
                 os.system(f"""su - root -c 'udevadm control --reload' <<< '{ROOTPSW}' """)
                 dialogWindow.destroy()
                 return "just_installed"
@@ -3035,6 +3351,9 @@ class InfoClass(Gtk.Window):
     def return_liststore_containers(self):
         return self.liststore_containers
 
+    def return_liststore_all_containers(self):
+        return self.liststore_all_containers
+
     def return_liststore_flashes(self):
         return self.liststore_flashes
 
@@ -3046,6 +3365,9 @@ class InfoClass(Gtk.Window):
 
     def on_cell_toggled(self, widget, path):
         self.liststore_containers[path][1] = not self.liststore_containers[path][1]
+
+    def on_cell_all_toggled(self, widget, path):
+        self.liststore_all_containers[path][1] = not self.liststore_all_containers[path][1]
 
     def on_cell_hdimage_toggled(self, widget, path):
         self.liststore_hdimage_containers[path][1] = not self.liststore_hdimage_containers[path][1]

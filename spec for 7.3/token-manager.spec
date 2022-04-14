@@ -3,12 +3,13 @@
 #
 
 Name:        token-manager
-Version:     2.0
+Version:     2.1
 Release:     1%{dist}.3
 
 BuildArch:   noarch
 
 Summary:     Certificate manager for CryptoPro CSP
+Summary(ru): Менеджер сертификатов для CryptoPro CSP
 License:     MIT
 Group:       System Environment/Base
 Url:         https://github.com/wolandius/token-manager
@@ -32,13 +33,17 @@ Requires:    xdg-utils
 %description
 A GTK front-end for Crypto Pro CSP for RED OS and GosLinux.
 
+%description -l ru
+Графическая оболочка GTK для Crypto Pro CSP для операционных систем РЕД ОС и ГосЛинукс.
+
 %package ia32
 Summary:     Certificate manager for 32-bit CryptoPro CSP
+Summary(ru): Менеджер сертификатов для 32-битной CryptoPro CSP
 BuildArch:   noarch
 Requires:    %{name}
 
-%description ia32
-A GTK front-end for 32-bit Crypto Pro CSP for RED OS and GosLinux.
+%description -l ru ia32
+Графическая оболочка GTK для 32-битной Crypto Pro CSP для операционных систем РЕД ОС и ГосЛинукс.
 
 %install
 mkdir -p %{buildroot}/%{_bindir}
@@ -88,6 +93,12 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %attr(0755,root,root) %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Thu Apr 14 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.1-1
+- Removed key -dn and replaced with -keyid
+- Added ru description to spec
+- Added new function export_container_cert
+- regex impovements, for userfriendly reading
+
 * Mon Feb 21 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.0-1
 - Fixed non-fatal error in refresh
 - Hide button "connect as reader", because this one not used
