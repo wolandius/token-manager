@@ -93,6 +93,7 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 - Added ru description to spec
 - Added new function export_container_cert
 - regex impovements, for userfriendly reading
+- rebased src to use archive as SOURCE0
 
 * Mon Feb 21 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.0-1
 - Fixed non-fatal error in refresh
