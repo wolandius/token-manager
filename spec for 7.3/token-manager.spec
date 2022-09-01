@@ -3,7 +3,7 @@
 #
 
 Name:        token-manager
-Version:     2.1
+Version:     2.2
 Release:     1%{dist}.3
 
 BuildArch:   noarch
@@ -88,6 +88,9 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %attr(0755,root,root) %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Thu Sep 01 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.2-1
+- Replace beesu with pkexec in cases where root is blocked in OS
+
 * Thu Apr 14 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.1-1
 - Removed key -dn and replaced with -keyid
 - Added ru description to spec

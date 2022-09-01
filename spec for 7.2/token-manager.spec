@@ -3,7 +3,7 @@
 #
 
 Name:        token-manager
-Version:     2.1
+Version:     2.2
 Release:     1%{dist}.2
 
 BuildArch:   noarch
@@ -19,6 +19,8 @@ Source0:     %{name}-%{version}.tar.gz
 Requires:    usermode
 Requires:    opensc
 Requires:    xdg-utils
+Requires:    polkit
+Requires:    realmd
 
 %description
 A GTK front-end for Crypto Pro CSP for RED OS and GosLinux.
@@ -59,9 +61,11 @@ mkdir -p %{buildroot}/%{_sysconfdir}/security/console.apps
 mkdir -p %{buildroot}%{_datadir}/doc/%{name}
 %{__install} -m 0644 LICENSE.md %{buildroot}%{_datadir}/doc/%{name}/LICENSE.md
 %{__install} -m 0644 README.md %{buildroot}%{_datadir}/doc/%{name}/README.md
+%{__install} -m 0644 org.freedesktop.policykit.pkexec.policy %{buildroot}%{_datadir}/polkit-1/actions/org.freedesktop.policykit.pkexec.policy
 
 %{__install} -m 0755 %{name} %{buildroot}%{_bindir}/%{name}
 %{__install} -m 0755 %{name}-ia32 %{buildroot}%{_bindir}/%{name}-ia32
+
 
 %post
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}.desktop
@@ -75,6 +79,7 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %{_bindir}/cpconfig-amd64
 %attr(0755,root,root) %{_bindir}/%{name}.py
 %attr(0755,root,root) %{_bindir}/%{name}
+%{_datadir}/polkit-1/actions/org.freedesktop.policykit.pkexec.policy
 %{_sysconfdir}/pam.d/cpconfig-amd64
 %{_sysconfdir}/security/console.apps/cpconfig-amd64
 %{_datadir}/pixmaps/token-manager.png
@@ -88,6 +93,9 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %attr(0755,root,root) %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Thu Sep 01 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.2-1
+- Replace beesu to pkexec in cases if root is blocked in OS
+
 * Thu Apr 14 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.1-1
 - Removed key -dn and replaced with -keyid
 - Added ru description to spec

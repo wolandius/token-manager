@@ -2,3 +2,4 @@ rpmbuild.sh
 *.rpm
 test*
 .idea
+*.tar.gz

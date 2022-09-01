@@ -49,7 +49,7 @@ from datetime import datetime
 
 from pathlib import Path
 
-VERSION = "2.1"
+VERSION = "2.2"
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help":
@@ -538,7 +538,7 @@ def del_store_cert(store, certID):
             # O = re.sub('"', '\\\"', O)
             # Cn = re.sub('"', '\\\"', Cn)
             certmgr = os.popen(
-                f"""beesu /opt/cprocsp/bin/{arch}/certmgr -delete -store mRoot -keyid "{certID}" """).readlines()
+                f"""pkexec /opt/cprocsp/bin/{arch}/certmgr -delete -store mRoot -keyid "{certID}" """).readlines()
         else:
             certmgr = os.popen(
                 f'echo 1 | /opt/cprocsp/bin/{arch}/certmgr -delete -store {store} -keyid "{certID}" ').readlines()
@@ -596,8 +596,8 @@ def install_root_cert(file, root):
             stdout=subprocess.PIPE)
     elif root == "mRoot":
         certmgr = subprocess.Popen(
-            ['beesu', '/opt/cprocsp/bin/%s/certmgr' % arch, '-inst', '-store', f'{root}', '-file', f"'{file}'"],
-            stdout=subprocess.PIPE)
+            [f'pkexec /opt/cprocsp/bin/{arch}/certmgr -inst -store {root} -file "{file}"'],
+            stdout=subprocess.PIPE, shell=True)
     output = certmgr.communicate()[0]
     if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
         m = re.findall(
@@ -658,8 +658,8 @@ def install_crl(file, root):
             stdout=subprocess.PIPE)
     elif root == "mRoot":
         certmgr = subprocess.Popen(
-            ['beesu', '/opt/cprocsp/bin/%s/certmgr' % arch, '-inst', '-crl', '-store', f'{root}', '-file', file],
-            stdout=subprocess.PIPE)
+            [f'pkexec /opt/cprocsp/bin/{arch}/certmgr -inst -crl -store {root} -file "{file}"'],
+            stdout=subprocess.PIPE, shell=True)
     output = certmgr.communicate()[0]
     if versiontuple(get_cspversion()[2]) > versiontuple("5.0.11455"):
         m = re.findall(r'(\d+)-{7}.+?'
