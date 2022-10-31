@@ -3,7 +3,7 @@
 #
 
 Name:        token-manager
-Version:     2.2
+Version:     2.3
 Release:     1%{dist}.3
 
 BuildArch:   noarch
@@ -60,6 +60,9 @@ mkdir -p %{buildroot}%{_datadir}/doc/%{name}
 %{__install} -m 0644 LICENSE.md %{buildroot}%{_datadir}/doc/%{name}/LICENSE.md
 %{__install} -m 0644 README.md %{buildroot}%{_datadir}/doc/%{name}/README.md
 
+mkdir -p %{buildroot}%{_datadir}/polkit-1/actions/
+%{__install} -m 0644 org.freedesktop.policykit.pkexec.policy %{buildroot}%{_datadir}/polkit-1/actions/org.freedesktop.policykit.pkexec.policy
+
 %{__install} -m 0755 %{name} %{buildroot}%{_bindir}/%{name}
 %{__install} -m 0755 %{name}-ia32 %{buildroot}%{_bindir}/%{name}-ia32
 
@@ -88,6 +91,9 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %attr(0755,root,root) %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Mon Oct 17 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.3-1
+- added error window for unsupported encodings on token
+
 * Thu Sep 01 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.2-1
 - Replace beesu with pkexec in cases where root is blocked in OS
 

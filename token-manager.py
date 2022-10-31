@@ -43,13 +43,17 @@ THE SOFTWARE.
 """
 import os, gi, re, subprocess, platform, sys, webbrowser
 
+import chardet
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from datetime import datetime
 
 from pathlib import Path
 
-VERSION = "2.2"
+VERSION = "2.3"
+
+GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help":
@@ -1053,12 +1057,27 @@ def list_root_certs():
 
 
 def get_token_certs(token):
+    win = InfoClass()
     csptest = subprocess.Popen(['/opt/cprocsp/bin/%s/csptest' % arch, '-keyset', '-enum_cont', '-unique', '-fqcn',
                                 '-verifyc'], stdout=subprocess.PIPE)
-    if versiontuple(get_cspversion()[2]) <= versiontuple("5.0.11455"):
-        output = csptest.communicate()[0].decode('cp1251').encode('utf-8').decode("utf-8")
-    else:
-        output = csptest.communicate()[0].decode("utf-8")
+    try:
+        if versiontuple(get_cspversion()[2]) <= versiontuple("5.0.11455"):
+            output = csptest.communicate()[0].decode('cp1251').encode('utf-8').decode("utf-8")
+        else:
+            output = csptest.communicate()[0].decode("utf-8")
+    except Exception as e:
+        if int(GUI_USERS) == 0:
+            print(f"Обнаружена неподдерживаемя кодировка  на токене.\n"
+                                     f"Поддерживаемые кодировки utf8 и cp1251\n"
+                                     f"Завершение работы программы\n\n"
+                                     f"{e}")
+            exit(-1)
+        elif int(GUI_USERS) >= 1:
+            win.print_big_error(info=f"Обнаружена неподдерживаемя кодировка  на токене\n"
+                                     f"Поддерживаемые кодировки utf8 и cp1251\n"
+                                     f"Завершение работы программы\n\n"
+                                     f"{e}", widtn=850, heigth=400)
+            exit(-1)
     certs = []
     if csptest.returncode:
         return u'Ошибка', 1
@@ -1066,7 +1085,6 @@ def get_token_certs(token):
         if token in line:
             certs.append(line)
     return certs, 0
-
 
 def get_tokens():
     list_pcsc = subprocess.Popen(['/opt/cprocsp/bin/%s/list_pcsc' % arch], stdout=subprocess.PIPE)
@@ -3402,7 +3420,6 @@ class moduleUI(Gtk.ApplicationWindow):
         self.containerr.set_show_tabs(False)
         self.paned = Gtk.Paned()
         self.paned.add2(self.containerr)
-
         self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.main_box.pack_start(self.paned, True, True, 0)
         combox = main(self.containerr, True)

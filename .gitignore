@@ -1,5 +1,5 @@
 rpmbuild.sh
 *.rpm
-test*
+test.py
 .idea
 *.tar.gz
