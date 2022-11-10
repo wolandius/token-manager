@@ -1,0 +1,188 @@
+v3.0 Nov 10 2022
+- added chain view in certificate window
+- added auto chain install for uMy, token and hdimage certificates
+
+v2.3 Oct 17 2022
+- added error window for unsupported encodings on token
+
+v2.2 Sep 01 2022
+- Replace beesu with pkexec in cases where root is blocked in OS
+
+v2.1 Apr 14 2022
+- Removed key -dn and replaced with -keyid
+- Added ru description to spec
+- Added new function export_container_cert
+- regex impovements, for userfriendly reading
+- rebased src to use archive as SOURCE0
+
+v2.0 Feb 21 2022
+- Fixed non-fatal error in refresh
+- Hide button "connect as reader", because this one not used
+- added aliases for name token-manager.py - token-manager and token-manager-ia32
+- added shortcut for ia32
+- devide binary packages for main and ia32
+- rebased regex logic in get_store_certs to show more home certs with redwine use
+
+v1.9 Feb 09 2022
+- changed logic for certmgr -inst -inst_to_cont
+  -file -cont, now numeric container name uses
+- added mask *.CER and *.CRT in addition to *.cer, *.cer
+- improved usb-flash containers export logic,
+  now available to rename it
+
+v1.8 Jan 24 2022
+- fixed update list in case of delete containers
+
+v1.7 Jan 14 2022
+- added change names instead of name_copy for containers export
+- added destination choose for containers export
+- fix in token serial numbers
+- improvements in write_cert output
+
+v1.6 Dec 30 2021
+- added function for install cert to container
+
+v1.5 Dec 23 2021
+- fix in serial = int(output[:11].decode('utf-8').replace(' ', ''), 16)
+- added hand choose arch for debugmode
+
+v1.4 Dec 02 2021
+- bug fixe in def delete_from_Token(self)
+- fixed warning  Warning: unable to set property
+  'background' of type 'gchararray' from value of type 'GdkRGBA'
+
+v1.3-2 Nov 25 2021
+- bug fixes in self.name and if tokens not exists
+- added version key for terminal
+
+v1.3 Nov 22 2021
+- added option '--debug-output' for analyzing main funcs worikng
+
+v1.1 Sep 26 2021
+- added check of pcscd status and enable it to autorun
+- fixed work for domain users without SecretNet
+
+v0.13.4-4 Jul 26 2021
+- cosmetic update, that makes available to use system colors
+  in most gtk app items instead of hardcoded #ffffff
+
+v0.13.4-3 Jul 15 2021
+- improved compatibility for cryptocpro4 non-cert rc5 version 4.0.9975
+
+v0.13.4-2 Jul 7 2021
+- improved compatibility for cryptocpro cert rc2 version 12000
+
+v0.13.4-1 Jul 2 2021
+- improved compatibility for cryptocpro cert rc2
+
+v0.13.4 Jun 29 2021
+- improved logic for secretnet users
+- added new submenu for usefull links
+
+v0.13.3-3 Jun 18 2021
+- changed delete window size from 1200*500 to 1000*500
+- fixed delete certs from mRoot
+- changed text in dialog buttons for mRoot store certs install
+- some fixes in u/mRoot certs install
+
+v0.13.3-2 Jun 5 2021
+- fixed error in check supported cryptopro version
+
+* Thu Jun 3 2021 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0.13.3-1
+- added new window for choose mRoot or uRoot store
+- added check for non supported cryptopro version
+- fix changed crypto5 version to cert version
+- small cosmetic fix in notification windows
+
+v0.13.2 May 31 2021
+- cosmetic update for notification windows
+- added missing gui for start check cryptopro
+- changed pin-code change logic
+- added keys for hand-choose of arch cryptopro. actual in cases of both archs on pc
+
+v0.13.1 May 26 2021
+- Made fixes for correct work with domain users' names (such as DOMAIN\USERNAME or USERNAME@DOMAIN)
+- Improved logic in choosing of flash/token
+
+v0.13 May 17 2021
+- Added copy containers from tokens or usb-flash to HDIMAGE and choose certificate for containers
+- Added work for secretnet with specific domains
+
+v0.12-9 Feb 09 2021
+- Fix bugs
+
+v0.12-8 Dec 22 2020
+- Rebuild for work on python3, GTK3, cryptopro 4 and 5
+
+v0.12-7 Dec 22 2020
+- Rebuild for os73 and add backward compatibility
+
+v0.12-6 Mar 25 2019
+- apply commit 5b05054 from git
+
+v0.12-5 Mar 12 2018
+- apply commit 51687e240e8ce9d03c821644273fb7671fd25ecd from git
+
+v0.12-4 Feb 15 2018
+- apply commit 51687e240e8ce9d03c821644273fb7671fd25ecd from git
+
+v0.12-2 Jul 26 2017
+- rebuild for RedOS
+
+0.12-1 Jul 14 2017
+- rebuild for GosLinux 6
+- add LICENSE and README files to rpm
+
+v0.12 Apr 07 2017
+- Release 0.12
+- Compatibility with CryptoPro CSP 4.0
+
+v0.11 Oct 30 2016
+- Release 0.11
+- Installing certificates to uMy store from file
+
+v0.10 Jul 06 2016
+- Release 0.10-1
+- Filter list of root certificates and CRLs
+
+v0.10 May 04 2016
+- Release 0.10
+- Displaying the token's serial number
+
+v0.9 Feb 09 2016
+- Release 0.9
+- Personal and root certificate storages
+- Displaying complete and translated into Russian info about certificates
+
+v0.8 Feb 03 2016
+- Release 0.8
+- Hardware reader setup
+- Remastered viewer windows
+
+v0.7 Aug 06 2015
+- Release 0.7
+- Added cache PIN feature
+
+v0.6 Mar 18 2015
+- Release 0.6
+- Display CSP version
+- Obsolete CSP version warning
+
+v0.5 Dec 24 2014
+- Release 0.5
+- Added delete container feature
+
+v0.4 Dec 23 2014
+- Release 0.4
+- Added change PIN feature
+
+v0.3 Dec 19 2014
+- Release 0.3
+- View installed root certificates and CRLs
+
+v0.2 Dec 08 2014
+- Release 0.2
+- Added features: Set license, View license, Install root certificate, Install CRL
+
+v0.1 Dec 04 2014
+- Initial build

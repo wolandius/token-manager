@@ -42,6 +42,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 import os, gi, re, subprocess, platform, sys, webbrowser
+import time
 
 import chardet
 
@@ -51,7 +52,7 @@ from datetime import datetime
 
 from pathlib import Path
 
-VERSION = "2.3"
+VERSION = "3.0"
 
 GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
 
@@ -530,11 +531,6 @@ def del_cont(cert):
 
 
 def del_store_cert(store, certID):
-    # var = CN.split("\nвыдан ")
-    # Cn = "'" + var[0] + "'"
-    # O = "'" + var[1].split("\nорганизация ")[1] + "'"
-    ## if in mRoot delete from mRoot else from uRoot
-
     if store == 'uRoot':
         # try to find cert in mRoot at first
         certs = os.popen(f"/opt/cprocsp/bin/{arch}/certmgr -list -store mRoot | grep {certID}").readlines()
@@ -704,6 +700,72 @@ def inst_cert_from_file(filepath):
         return output.split("\n")[-1]
     return u"Сертификат успешно установлен"
 
+def get_UC_CDP(output):
+    if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
+        regex_string_CA = r'^URL сертификата УЦ.*?: http.*\.crt\n|URL сертификата УЦ.*?: http.*\.cer'
+        regex_string_CDP = r'^URL списка отзыва.*?: http.*\.crl\n'
+        resub_string_CA = r'URL сертификата УЦ.*?: '
+        resub_string_CDP = r'URL списка отзыва.*?: '
+    elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
+        regex_string_CA = r'^URL сертификата УЦ.*?: http.*\.crt\n|URL сертификата УЦ.*?: http.*\.cer'
+        regex_string_CDP = r'^URL списка отзыва.*?: http.*\.crl\n'
+        resub_string_CA = r'URL сертификата УЦ.*?: '
+        resub_string_CDP = r'URL списка отзыва.*?: '
+    elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
+        regex_string_CA = r'^CA cert URL.*?: http.*\.crt\n|URL сертификата УЦ.*?: http.*\.cer'
+        regex_string_CDP = r'^CDP.*?: http.*\.crl\n'
+        resub_string_CA = r'CA cert URL.*?: '
+        resub_string_CDP = r'CDP.*?: '
+    elif versiontuple("4.0.9971") <= versiontuple(get_cspversion()[2]) < versiontuple("5.0.10003"):
+        regex_string_CA = r'^URL сертификата УЦ.*?: http.*\.crt\n|URL сертификата УЦ.*?: http.*\.cer'
+        regex_string_CDP = r'^URL списка отзыва.*?: http.*\.crl\n'
+        resub_string_CA = r'URL сертификата УЦ.*?: '
+        resub_string_CDP = r'URL списка отзыва.*?: '
+    else:
+        regex_string_CA = r'^CA cert URL.*?: http.*\.crt\n|URL сертификата УЦ.*?: http.*\.cer'
+        regex_string_CDP = r'^CDP.*?: http.*\.crl\n'
+        resub_string_CA = r'CA cert URL.*?: '
+        resub_string_CDP = r'CDP.*?: '
+    certs_UC_str = ""
+    certs_UC = re.findall(regex_string_CA, output, re.MULTILINE + re.DOTALL)
+    # print(certs_UC)
+    if len(certs_UC) > 0:
+        certs_UC = certs_UC[0].strip().split("\n")
+        for cert in certs_UC:
+            if ".crt" in cert or ".cer" in cert:
+                cert = re.sub(resub_string_CA, "", cert)
+                certs_UC_str += cert + "\n"
+    certs_UC_str = certs_UC_str[:-1]
+    certs_CDP_str = ""
+    certs_CDP = re.findall(regex_string_CDP, output, re.MULTILINE + re.DOTALL)
+    # print(certs_CDP)
+    if len(certs_CDP) > 0:
+        certs_CDP = certs_CDP[0].strip().split("\n")
+        for cert in certs_CDP:
+            if ".crl" in cert:
+                cert = re.sub(resub_string_CDP, "", cert)
+                certs_CDP_str += cert + "\n"
+    certs_CDP_str = certs_CDP_str[:-1]
+    return [certs_UC_str, certs_CDP_str]
+
+def get_cert_info_from_file(file):
+    if versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9708"):
+        certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-file', file],
+                                   stdout=subprocess.PIPE)
+    else:
+        certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-verbose', '-file', file],
+                                   stdout=subprocess.PIPE)
+    output = certmgr.communicate()[0].decode('utf-8')
+    lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
+    print(lists)
+    m = []
+    for i in range(1, len(lists), 2):
+        certs_UC_str = ""
+        certs_CDP_str = ""
+        certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
+        m.append(certs_UC_str)
+        m.append(certs_CDP_str)
+    return m
 
 def get_store_certs(store):
     if store == 'uRoot':
@@ -799,10 +861,15 @@ def get_store_certs(store):
                     else:
                         part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
 
-                    for i in range(0, len(part2)):
-                        part2[i] = re.sub('\n', '', part2[i])
-                        part2[i] = part2[i].strip()
+                    for j in range(0, len(part2)):
+                        part2[j] = re.sub('\n', '', part2[j])
+                        part2[j] = part2[j].strip()
                     part1.append(part2)
+                    certs_UC_str = ""
+                    certs_CDP_str = ""
+                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
+                    part1.append(certs_UC_str)
+                    part1.append(certs_CDP_str)
                     m.append(part1)
                 else:
                     lists[i] = re.findall(
@@ -815,7 +882,13 @@ def get_store_certs(store):
                         r'Выдан.*?(\d.+?)UTC\n'
                         r'Истекает.*?(\d.+?)UTC.+?\n',
                         lists[i], re.MULTILINE + re.DOTALL)
-                    m.append(lists[i][0])
+                    part1 = list(lists[i][0])
+                    certs_UC_str = ""
+                    certs_CDP_str = ""
+                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i][0][0])
+                    part1.append(certs_UC_str)
+                    part1.append(certs_CDP_str)
+                    m.append(part1)
                 counter += 1
         elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
             lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
@@ -843,10 +916,15 @@ def get_store_certs(store):
                     else:
                         part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
 
-                    for i in range(0, len(part2)):
-                        part2[i] = re.sub('\n', '', part2[i])
-                        part2[i] = part2[i].strip()
+                    for j in range(0, len(part2)):
+                        part2[j] = re.sub('\n', '', part2[j])
+                        part2[j] = part2[j].strip()
                     part1.append(part2)
+                    certs_UC_str = ""
+                    certs_CDP_str = ""
+                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
+                    part1.append(certs_UC_str)
+                    part1.append(certs_CDP_str)
                     m.append(part1)
                 else:
                     lists[i] = re.findall(
@@ -859,7 +937,13 @@ def get_store_certs(store):
                         r'Выдан.*?(\d.+?)UTC\n'
                         r'Истекает.*?(\d.+?)UTC.+?\n',
                         output, re.MULTILINE + re.DOTALL)
-                    m.append(lists[i][0])
+                    part1 = list(lists[i][0])
+                    certs_UC_str = ""
+                    certs_CDP_str = ""
+                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i][0][0])
+                    part1.append(certs_UC_str)
+                    part1.append(certs_CDP_str)
+                    m.append(part1)
                 counter += 1
         elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
             lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
@@ -886,10 +970,15 @@ def get_store_certs(store):
                         part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
                     else:
                         part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                    for i in range(0, len(part2)):
-                        part2[i] = re.sub('\n', '', part2[i])
-                        part2[i] = part2[i].strip()
+                    for j in range(0, len(part2)):
+                        part2[j] = re.sub('\n', '', part2[j])
+                        part2[j] = part2[j].strip()
                     part1.append(part2)
+                    certs_UC_str = ""
+                    certs_CDP_str = ""
+                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
+                    part1.append(certs_UC_str)
+                    part1.append(certs_CDP_str)
                     m.append(part1)
                 else:
                     lists[i] = re.findall(
@@ -902,7 +991,13 @@ def get_store_certs(store):
                         r'Not valid before.*?(\d.+?)UTC\n'
                         r'Not valid after.*?(\d.+?)UTC.+?\n',
                         lists[i], re.MULTILINE + re.DOTALL)
-                    m.append(lists[i][0])
+                    part1 = list(lists[i][0])
+                    certs_UC_str = ""
+                    certs_CDP_str = ""
+                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i][0][0])
+                    part1.append(certs_UC_str)
+                    part1.append(certs_CDP_str)
+                    m.append(part1)
                 counter += 1
         elif versiontuple("4.0.9971") <= versiontuple(get_cspversion()[2]) < versiontuple("5.0.10003"):
             lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
@@ -945,7 +1040,13 @@ def get_store_certs(store):
                         r'Выдан.*?(\d.+?)UTC\n'
                         r'Истекает.*?(\d.+?)UTC.+?\n',
                         output, re.MULTILINE + re.DOTALL)
-                    m.append(lists[i][0])
+                    part1 = list(lists[i][0])
+                    certs_UC_str = ""
+                    certs_CDP_str = ""
+                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i][0][0])
+                    part1.append(certs_UC_str)
+                    part1.append(certs_CDP_str)
+                    m.append(part1)
                 counter += 1
         else:
             lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
@@ -964,6 +1065,7 @@ def get_store_certs(store):
                         r'Not valid before.*?(\d.+?)UTC\n'
                         r'Not valid after.*?(\d.+?)UTC.+?\n',
                         lists[i], re.MULTILINE + re.DOTALL)
+
                     part1 = list(part1[0])
                     part2 = re.split(r'Extended Key Usage', lists[i], re.MULTILINE + re.DOTALL)[1:]
                     part2 = [x for x in part2 if x != ''][0]
@@ -972,26 +1074,71 @@ def get_store_certs(store):
                         part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
                     else:
                         part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                    for i in range(0, len(part2)):
-                        part2[i] = re.sub('\n', '', part2[i])
-                        part2[i] = part2[i].strip()
+                    for j in range(0, len(part2)):
+                        part2[j] = re.sub('\n', '', part2[j])
+                        part2[j] = part2[j].strip()
                     part1.append(part2)
+
+                    certs_UC_str = ""
+                    certs_CDP_str = ""
+                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
+                    part1.append(certs_UC_str)
+                    part1.append(certs_CDP_str)
                     m.append(part1)
                 else:
                     lists[i] = re.findall(
-                        r'(\d+)-{7}\n'
-                        r'Issuer.*?: (.+?)\n.*?'
-                        r'Subject.*?: (.+?)\n.*?'
-                        r'Serial.*?: (0x\w+?)\n'
-                        r'SHA1 Hash.*?(\w+?)\n.*?'
-                        r'SubjKeyID.*?: (.+?)\n.*?'
-                        r'Not valid before.*?(\d.+?)UTC\n'
-                        r'Not valid after.*?(\d.+?)UTC.+?\n',
-                        lists[i], re.MULTILINE + re.DOTALL)
-                    m.append(lists[i][0])
+                            r'(\d+)-{7}\n'
+                            r'Issuer.*?: (.+?)\n.*?'
+                            r'Subject.*?: (.+?)\n.*?'
+                            r'Serial.*?: (0x\w+?)\n'
+                            r'SHA1 Hash.*?(\w+?)\n.*?'
+                            r'SubjKeyID.*?: (.+?)\n.*?'
+                            r'Not valid before.*?(\d.+?)UTC\n'
+                            r'Not valid after.*?(\d.+?)UTC.+?\n',
+                            lists[i], re.MULTILINE + re.DOTALL)
+                    part1 = list(lists[i][0])
+                    certs_UC_str = ""
+                    certs_CDP_str = ""
+                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i][0][0])
+                    part1.append(certs_UC_str)
+                    part1.append(certs_CDP_str)
+                    m.append(part1)
                 counter += 1
     return m
 
+def install_CA_extra(url):
+    name = url.split("/")[-1]
+    os.system("mkdir -p /tmp/token-manager/CA")
+    wget_out = subprocess.Popen(["wget", f"{url}",
+                                 "-O", f"/tmp/token-manager/CA/{name}"],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+
+    output, error = wget_out.communicate()
+    time.sleep(2)
+    if wget_out.returncode != 0:
+        print(error.decode("utf-8").strip())
+        return [[url, error.decode("utf-8").strip()], 1]
+    else:
+        install_root_cert(f"/tmp/token-manager/CA/{name}", "uRoot")
+        return [url, 0]
+
+def install_CDP_extra(url):
+    name = url.split("/")[-1]
+    os.system("mkdir -p /tmp/token-manager/CDP")
+    wget_out = subprocess.Popen(["wget", f"{url}",
+                                 "-O", f"/tmp/token-manager/CDP/{name}"],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+
+    output, error = wget_out.communicate()
+    time.sleep(2)
+    if wget_out.returncode != 0:
+        print(error.decode("utf-8").strip())
+        return [[url, error.decode("utf-8").strip()], 1]
+    else:
+        install_crl(f"/tmp/token-manager/CDP/{name}", "uRoot")
+        return [url, 0]
 
 def list_crls():
     certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-crl', '-store', 'uRoot'],
@@ -1057,6 +1204,7 @@ def list_root_certs():
 
 
 def get_token_certs(token):
+    # print(token)
     win = InfoClass()
     csptest = subprocess.Popen(['/opt/cprocsp/bin/%s/csptest' % arch, '-keyset', '-enum_cont', '-unique', '-fqcn',
                                 '-verifyc'], stdout=subprocess.PIPE)
@@ -1096,6 +1244,7 @@ def get_tokens():
 
 
 def list_cert(cert):
+    print(cert)
     if versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9708"):
         certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-cont', cert],
                                    stdout=subprocess.PIPE)
@@ -1129,10 +1278,16 @@ def list_cert(cert):
                 else:
                     part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
 
-                for i in range(0, len(part2)):
-                    part2[i] = re.sub('\n', '', part2[i])
-                    part2[i] = part2[i].strip()
+                for j in range(0, len(part2)):
+                    part2[j] = re.sub('\n', '', part2[j])
+                    part2[j] = part2[j].strip()
                 part1.append(part2)
+
+                certs_UC_str = ""
+                certs_CDP_str = ""
+                certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
+                part1.append(certs_UC_str)
+                part1.append(certs_CDP_str)
                 m.append(part1)
             else:
                 lists[i] = re.findall(
@@ -1173,10 +1328,16 @@ def list_cert(cert):
                 else:
                     part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
 
-                for i in range(0, len(part2)):
-                    part2[i] = re.sub('\n', '', part2[i])
-                    part2[i] = part2[i].strip()
+                for j in range(0, len(part2)):
+                    part2[j] = re.sub('\n', '', part2[j])
+                    part2[j] = part2[j].strip()
                 part1.append(part2)
+
+                certs_UC_str = ""
+                certs_CDP_str = ""
+                certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
+                part1.append(certs_UC_str)
+                part1.append(certs_CDP_str)
                 m.append(part1)
             else:
                 lists[i] = re.findall(
@@ -1216,10 +1377,16 @@ def list_cert(cert):
                     part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
                 else:
                     part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                for i in range(0, len(part2)):
-                    part2[i] = re.sub('\n', '', part2[i])
-                    part2[i] = part2[i].strip()
+                for j in range(0, len(part2)):
+                    part2[j] = re.sub('\n', '', part2[j])
+                    part2[j] = part2[j].strip()
                 part1.append(part2)
+
+                certs_UC_str = ""
+                certs_CDP_str = ""
+                certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
+                part1.append(certs_UC_str)
+                part1.append(certs_CDP_str)
                 m.append(part1)
             else:
                 lists[i] = re.findall(
@@ -1259,10 +1426,16 @@ def list_cert(cert):
                     part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
                 else:
                     part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                for i in range(0, len(part2)):
-                    part2[i] = re.sub('\n', '', part2[i])
-                    part2[i] = part2[i].strip()
+                for j in range(0, len(part2)):
+                    part2[j] = re.sub('\n', '', part2[j])
+                    part2[j] = part2[j].strip()
                 part1.append(part2)
+
+                certs_UC_str = ""
+                certs_CDP_str = ""
+                certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
+                part1.append(certs_UC_str)
+                part1.append(certs_CDP_str)
                 m.append(part1)
             else:
                 lists[i] = re.findall(
@@ -1302,10 +1475,16 @@ def list_cert(cert):
                     part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
                 else:
                     part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                for i in range(0, len(part2)):
-                    part2[i] = re.sub('\n', '', part2[i])
-                    part2[i] = part2[i].strip()
+                for j in range(0, len(part2)):
+                    part2[j] = re.sub('\n', '', part2[j])
+                    part2[j] = part2[j].strip()
                 part1.append(part2)
+
+                certs_UC_str = ""
+                certs_CDP_str = ""
+                certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
+                part1.append(certs_UC_str)
+                part1.append(certs_CDP_str)
                 m.append(part1)
             else:
                 lists[i] = re.findall(
@@ -1644,9 +1823,11 @@ class TokenUI(Gtk.Box):
                 # self.asReader.set_sensitive(True)
                 self.token = temp[1]
                 certs = get_token_certs(str(self.token))[0]
+                counter = 0
                 for cert in certs:
                     cert_item = cert.split('|')[0].split('\\')[-1]
-                    self.cert_list.append(["", cert_item, "", Gdk.RGBA(red=0, green=0, blue=0, alpha=0)])
+                    self.cert_list.append([str(counter), cert_item, "", Gdk.RGBA(red=0, green=0, blue=0, alpha=0)])
+                    counter+=1
             if not self.isToken:  # not isToken?
                 self.cert_install.set_sensitive(True)
                 if self.store == 'uRoot':
@@ -1656,6 +1837,7 @@ class TokenUI(Gtk.Box):
                 elif self.store == 'uMy':
                     if self.handler_id_install != "":
                         self.cert_install.disconnect(self.handler_id_install)
+                    # реализовать как в токене сбор данных и доустановку CA / CDP
                     self.handler_id_install = self.cert_install.connect("clicked", self.info_class.install_local_cert)
                 # self.asReader.set_sensitive(False)
                 self.changePIN.set_sensitive(False)
@@ -1685,7 +1867,7 @@ class TokenUI(Gtk.Box):
 
                         cert_ID = cert[5]
 
-                        self.cert_list.append([self.cert_index, cert_item, cert_ID, color])
+                        self.cert_list.append([self.cert_index, cert_item, cert_ID, color, ])
                     except KeyError as e:
                         print(f" Couldn't parse {e}")
         return True
@@ -1772,7 +1954,11 @@ class TokenUI(Gtk.Box):
 
     def select_cert(self, selection):
         self.cert_selection = selection
+        print(self.cert_selection)
+
         (model, iter) = selection.get_selected()
+        self.cert_model = model
+        self.cert_model_iter = iter
         self.cert_install.set_sensitive(True)
         self.cert_view.set_sensitive(True)
         self.cert_delete.set_sensitive(True)
@@ -1788,7 +1974,8 @@ class TokenUI(Gtk.Box):
                 cert_name = str(model.get_value(iter, 1))
                 for line in containers[0]:
                     container = line
-                    if cert_name in container:
+
+                    if cert_name.strip() in container.strip():
                         self.cert = line.split('|')[1]
                         self.cont_id = line.split('|')[1].split('\\')[
                                        4:]  # содержит список, который нужно объединить бэкслэшами
@@ -1809,8 +1996,10 @@ class TokenUI(Gtk.Box):
             cert_info = list_cert(self.cert)
             if cert_info:
                 line = cert_info[0]
+
         else:
             cert_info = get_store_certs(self.store)
+
             cert_index = model.get_value(iter, 0)
             line = cert_info[int(cert_index) - 1]
         if line:
@@ -1870,7 +2059,25 @@ class TokenUI(Gtk.Box):
             for oid in ext_key:
                 item = translate_cert_fields(oid)
                 cert_view.cert_listview.append([item, color])
-
+            try:
+                if type(line[9]) == str and len(line[9]) > 0:
+                    item = '<b>Необходимые корневые сертификаты</b>: '
+                    cert_view.cert_listview.append([item, color])
+                    for l in line[9].split("\n"):
+                        cert_view.cert_listview.append([l, color])
+                    self.CA_LIST_STR = line[9]
+                    print(self.CA_LIST_STR)
+            except IndexError:
+                pass
+            try:
+                if type(line[10]) == str and len(line[10]) > 0:
+                    item = '<b>Необходимые промежуточные сертификаты</b>: '
+                    cert_view.cert_listview.append([item, color])
+                    for l in line[10].split("\n"):
+                        cert_view.cert_listview.append([l, color])
+                    self.CDP_LIST_STR = line[10]
+            except IndexError:
+                pass
             cert_view.connect("destroy", Gtk.main_quit)
             cert_view.show_all()
             Gtk.main()
@@ -1948,11 +2155,8 @@ class TokenUI(Gtk.Box):
                                                 f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{selected_store_hdimage}' "
                                                 f"-contdest '\\\\.\\{selected_store}\\{container_name}'").readlines()
 
-                                            if win.install_cert_from_or_to_container(
+                                            if not win.install_cert_from_or_to_container(
                                                     f"\\\\.\\{selected_store}\\{container_name}", selected_store):
-                                                win.print_simple_info(
-                                                    "Контейнер успешно скопирован\nи связан с сертификатом")
-                                            else:
                                                 win.print_simple_info("Операция отменена пользователем")
                                     else:
                                         win.print_simple_info("Операция отменена пользователем")
@@ -2074,11 +2278,8 @@ class TokenUI(Gtk.Box):
                                                 f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{cont[0]}' "
                                                 f"-contdest '\\\\.\\{selected_store}\\{container_name}' | iconv -f cp1251").readlines()
 
-                                            if win.install_cert_from_or_to_container(
+                                            if not win.install_cert_from_or_to_container(
                                                     f"\\\\.\\{selected_store}\\{container_name}", selected_store):
-                                                win.print_simple_info(
-                                                    "Контейнер успешно скопирован\nи связан с сертификатом")
-                                            else:
                                                 win.print_simple_info("Операция отменена пользователем")
                                     else:
                                         win.print_simple_info("Операция отменена пользователем")
@@ -2158,11 +2359,8 @@ class TokenUI(Gtk.Box):
                                                     f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{cont[0]}' "
                                                     f"-contdest '\\\\.\\{selected_store}\\{container_name}' | iconv -f cp1251").readlines()
 
-                                                if win.install_cert_from_or_to_container(
+                                                if not win.install_cert_from_or_to_container(
                                                         f"\\\\.\\{selected_store}\\{container_name}", selected_store):
-                                                    win.print_simple_info(
-                                                        "Контейнер успешно скопирован\nи связан с сертификатом")
-                                                else:
                                                     win.print_simple_info("Операция отменена пользователем")
                                         else:
                                             win.print_simple_info("Операция отменена пользователем")
@@ -2208,14 +2406,75 @@ class TokenUI(Gtk.Box):
             status = self.info_class.call_secretnet_configs("доменных пользователей", "domain")
             if status == "installed":
                 ret = self.inst_cert(self.cert)
+
                 if ret == u"Сертификат успешно установлен":
-                    self.info_class.print_simple_info(ret)
+                    cert_info = list_cert(self.cert)
+                    line = cert_info[0]
+                    CA_LIST_STR = ""
+                    CDP_LIST_STR = ""
+                    try:
+                        if type(line[9]) == str and len(line[9]) > 0:
+                            CA_LIST_STR = line[9]
+                        if type(line[10]) == str and len(line[10]) > 0:
+                            CDP_LIST_STR = line[10]
+                    except IndexError:
+                        pass
+                    if CA_LIST_STR != "" or CDP_LIST_STR != "":
+                        self.info_class.print_simple_info(
+                            u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
+                        strk_out = ""
+                        errors_ca = []
+                        success_ca = []
+                        errors_cdp = []
+                        success_cdp = []
+                        if CA_LIST_STR != "":
+                            for ca in CA_LIST_STR.split("\n"):
+                                out = install_CA_extra(ca)
+                                success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                time.sleep(2)
+                        if CDP_LIST_STR != "":
+                            if CA_LIST_STR != "":
+                                strk_out += "\n"
+
+                            for cdp in CDP_LIST_STR.split("\n"):
+                                out = install_CDP_extra(cdp)
+                                success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                time.sleep(2)
+                        if len(success_ca) > 0:
+                            strk_out += "Успешно установлены корневые сертификаты:\n"
+                            for succ in success_ca:
+                                strk_out += f"{succ}\n"
+
+                        if len(success_cdp) > 0:
+                            if len(success_ca) > 0:
+                                strk_out += "\n"
+                            strk_out += "Успешно установлены сертификаты отзыва:\n"
+                            for succ in success_cdp:
+                                strk_out += f"{succ}\n"
+
+                        if len(errors_ca) > 0:
+                            if len(success_ca) > 0 or len(success_cdp) > 0:
+                                strk_out += "\n"
+                            strk_out += "Ошибка при установке корневых сертификатов:\n"
+                            for err in errors_ca:
+                                strk_out += f"{err[0]}\n{err[1]}\n"
+
+                        if len(errors_cdp) > 0:
+                            if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
+                                strk_out += "\n"
+                            strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                            for err in errors_cdp:
+                                strk_out += f"{err[0]}\n{err[1]}\n"
+
+                        view = ViewCertOutput()
+                        view.set_model(f"{strk_out}")
+                        view.connect("destroy", Gtk.main_quit)
+                        view.show_all()
+                        Gtk.main()
                 else:
                     # Вариант с открытой частью не удался, предлагаем пользователю самому выбрать сертификат для закрытой части.
                     output = win.choose_open_cert_to_close_container(self.cert)
-                    if output[0]:
-                        self.info_class.print_simple_info(u"Сертификат успешно установлен")
-                    else:
+                    if not output[0]:
                         strk = ""
                         for line in output[1]:
                             strk += line
@@ -2227,13 +2486,77 @@ class TokenUI(Gtk.Box):
         else:
             ret = self.inst_cert(self.cert)
             if ret == u"Сертификат успешно установлен":
-                self.info_class.print_simple_info(ret)
+                # self.info_class.print_simple_info(ret)
+                cert_info = list_cert(self.cert)
+                line = cert_info[0]
+                CA_LIST_STR = ""
+                CDP_LIST_STR = ""
+                try:
+                    if type(line[9]) == str and len(line[9]) > 0:
+                        CA_LIST_STR = line[9]
+                    if type(line[10]) == str and len(line[10]) > 0:
+                        CDP_LIST_STR = line[10]
+                except IndexError:
+                    pass
+                if CA_LIST_STR != "" or CDP_LIST_STR != "":
+                    self.info_class.print_simple_info(
+                        u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
+                    strk_out = ""
+                    errors_ca = []
+                    success_ca = []
+                    errors_cdp = []
+                    success_cdp = []
+                    if CA_LIST_STR != "":
+
+                        for ca in CA_LIST_STR.split("\n"):
+                            out = install_CA_extra(ca)
+                            success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                            time.sleep(2)
+                    if CDP_LIST_STR != "":
+                        if CA_LIST_STR != "":
+                            strk_out += "\n"
+
+                        for cdp in CDP_LIST_STR.split("\n"):
+                            out = install_CDP_extra(cdp)
+                            success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                            time.sleep(2)
+                    if len(success_ca) > 0:
+                        strk_out += "Успешно установлены корневые сертификаты:\n"
+                        for succ in success_ca:
+                            strk_out += f"{succ}\n"
+
+                    if len(success_cdp) > 0:
+                        if len(success_ca) > 0:
+                            strk_out += "\n"
+                        strk_out += "Успешно установлены сертификаты отзыва:\n"
+                        for succ in success_cdp:
+                            strk_out += f"{succ}\n"
+
+                    if len(errors_ca) > 0:
+                        if len(success_ca) > 0 or len(success_cdp) > 0:
+                            strk_out += "\n"
+                        strk_out += "Ошибка при установке корневых сертификатов:\n"
+                        for err in errors_ca:
+                            strk_out += f"{err[0]}\n{err[1]}\n"
+
+                    if len(errors_cdp) > 0:
+                        if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
+                            strk_out += "\n"
+                        strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                        for err in errors_cdp:
+                            strk_out += f"{err[0]}\n{err[1]}\n"
+
+                    view = ViewCertOutput()
+                    view.set_model(f"{strk_out}")
+                    view.connect("destroy", Gtk.main_quit)
+                    view.show_all()
+                    Gtk.main()
+                else:
+                    self.info_class.print_simple_info(u"Сертификат успешно установлен.")
             else:
                 # Вариант с открытой частью не удался, предлагаем пользователю самому выбрать сертификат для закрытой части.
                 output = win.choose_open_cert_to_close_container(self.cert)
-                if output[0]:
-                    self.info_class.print_simple_info(u"Сертификат успешно установлен")
-                else:
+                if not output[0]:
                     strk = ""
                     for line in output[1]:
                         strk += line
@@ -2530,7 +2853,7 @@ class ListCert(Gtk.ApplicationWindow):
 class ViewCert(Gtk.ApplicationWindow):
     def __init__(self):
         super(ViewCert, self).__init__()
-        self.set_default_size(550, 500)
+        self.set_default_size(600, 500)
         self.set_border_width(5)
         self.set_keep_above(True)
         hb = Gtk.HeaderBar()
@@ -2554,6 +2877,7 @@ class ViewCert(Gtk.ApplicationWindow):
             col = Gtk.TreeViewColumn("Сертификаты", cell, markup=0, background_rgba=1)
         else:
             col = Gtk.TreeViewColumn("Сертификаты", cell, markup=0)
+        cell.set_property("editable", True)
         self.view.append_column(col)
         self.sw = Gtk.ScrolledWindow()
         self.sw.add(self.view)
@@ -2561,12 +2885,46 @@ class ViewCert(Gtk.ApplicationWindow):
         self.add(self.main_box)
         self.show_all()
 
+class ViewCertOutput(Gtk.ApplicationWindow):
+    def __init__(self):
+        super(ViewCertOutput, self).__init__()
+        self.set_default_size(650, 400)
+        self.set_border_width(5)
+        self.set_keep_above(True)
+        hb = Gtk.HeaderBar()
+        hb.set_show_close_button(False)
+        button = Gtk.Button.new_with_label("X")
+        button.connect("clicked", self.button_close_clicked)
+        hb.pack_end(button)
+        self.set_titlebar(hb)
+        self.main_box = Gtk.Box()
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_skip_taskbar_hint(True)
+
+
+    def set_model(self, info):
+        self.liststore = Gtk.ListStore(str)
+        self.liststore.append([info])
+        treeview = Gtk.TreeView(model=self.liststore)
+        sel = treeview.get_selection()
+        sel.set_mode(Gtk.SelectionMode.NONE)
+        renderer_text = Gtk.CellRendererText()
+        column_text = Gtk.TreeViewColumn("", renderer_text, text=0)
+        treeview.append_column(column_text)
+        scrolled_tree = Gtk.ScrolledWindow()
+        scrolled_tree.add(treeview)
+        self.main_box.pack_start(scrolled_tree, True, True, 0)
+        self.add(self.main_box)
+        self.show_all()
+
+    def button_close_clicked(self, button):
+        self.destroy()
 
 class InfoClass(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self)
-        box = Gtk.Box()
-        self.add(box)
+        # box = Gtk.Box()
+        # self.add(box)
 
     def print_info(self, info, widtn, heigth):
         self.liststore = Gtk.ListStore(str)
@@ -2578,7 +2936,7 @@ class InfoClass(Gtk.Window):
         dialogWindow.set_title("Информация")
         dialogWindow.set_resizable(True)
         dialogBox = dialogWindow.get_content_area()
-
+        dialogWindow.set_border_width(2)
         treeview = Gtk.TreeView(model=self.liststore)
         sel = treeview.get_selection()
         sel.set_mode(Gtk.SelectionMode.NONE)
@@ -2588,8 +2946,9 @@ class InfoClass(Gtk.Window):
 
         scrolled_tree = Gtk.ScrolledWindow()
         scrolled_tree.add(treeview)
-        dialogWindow.set_size_request(widtn, heigth)
+
         dialogBox.pack_start(scrolled_tree, True, True, 0)
+        dialogWindow.set_size_request(widtn, heigth)
         dialogWindow.show_all()
         response = dialogWindow.run()
         dialogWindow.destroy()
@@ -2684,7 +3043,71 @@ class InfoClass(Gtk.Window):
             dialog.destroy()
             ret = inst_cert_from_file(file_name)
             if ret == u"Сертификат успешно установлен":
-                self.print_simple_info(ret)
+                # self.print_simple_info(ret)
+                info = get_cert_info_from_file(file_name)
+                # print(info)
+                CA_LIST_STR = ""
+                CDP_LIST_STR = ""
+                try:
+                    if type(info[0]) == str and len(info[0]) > 0:
+                        CA_LIST_STR = info[0]
+                    if type(info[1]) == str and len(info[1]) > 0:
+                        CDP_LIST_STR = info[1]
+                except IndexError:
+                    pass
+                if CA_LIST_STR != "" or CDP_LIST_STR != "":
+                    self.print_simple_info(
+                        u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
+                    strk_out = ""
+                    errors_ca = []
+                    success_ca = []
+                    errors_cdp = []
+                    success_cdp = []
+                    if CA_LIST_STR != "":
+
+                        for ca in CA_LIST_STR.split("\n"):
+                            out = install_CA_extra(ca)
+                            success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                            time.sleep(2)
+                    if CDP_LIST_STR != "":
+                        if CA_LIST_STR != "":
+                            strk_out += "\n"
+
+                        for cdp in CDP_LIST_STR.split("\n"):
+                            out = install_CDP_extra(cdp)
+                            success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                            time.sleep(2)
+                    if len(success_ca) > 0:
+                        strk_out += "Успешно установлены корневые сертификаты:\n"
+                        for succ in success_ca:
+                            strk_out += f"{succ}\n"
+
+                    if len(success_cdp) > 0:
+                        if len(success_ca) > 0:
+                            strk_out += "\n"
+                        strk_out += "Успешно установлены сертификаты отзыва:\n"
+                        for succ in success_cdp:
+                            strk_out += f"{succ}\n"
+
+                    if len(errors_ca) > 0:
+                        if len(success_ca) > 0 or len(success_cdp) > 0:
+                            strk_out += "\n"
+                        strk_out += "Ошибка при установке корневых сертификатов:\n"
+                        for err in errors_ca:
+                            strk_out += f"{err[0]}\n{err[1]}\n"
+
+                    if len(errors_cdp) > 0:
+                        if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
+                            strk_out += "\n"
+                        strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                        for err in errors_cdp:
+                            strk_out += f"{err[0]}\n{err[1]}\n"
+
+                    view = ViewCertOutput()
+                    view.set_model(f"{strk_out}")
+                    view.connect("destroy", Gtk.main_quit)
+                    view.show_all()
+                    Gtk.main()
             else:
                 self.print_info(ret, 350, 300)
         else:
@@ -3109,6 +3532,71 @@ class InfoClass(Gtk.Window):
                     f"/opt/cprocsp/bin/{arch}/certmgr -inst -store uMy -file '{file_name}' -cont '{container}'").readlines()
                 for l in output:
                     if "[ErrorCode: 0x00000000]" in l:
+                        info = get_cert_info_from_file(file_name)
+                        CA_LIST_STR = ""
+                        CDP_LIST_STR = ""
+                        try:
+                            if type(info[0]) == str and len(info[0]) > 0:
+                                CA_LIST_STR = info[0]
+                            if type(info[1]) == str and len(info[1]) > 0:
+                                CDP_LIST_STR = info[1]
+                        except IndexError:
+                            pass
+                        if CA_LIST_STR != "" or CDP_LIST_STR != "":
+                            self.print_simple_info(
+                                u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
+                            strk_out = ""
+                            errors_ca = []
+                            success_ca = []
+                            errors_cdp = []
+                            success_cdp = []
+                            if CA_LIST_STR != "":
+
+                                for ca in CA_LIST_STR.split("\n"):
+                                    out = install_CA_extra(ca)
+                                    success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                    time.sleep(2)
+                            if CDP_LIST_STR != "":
+                                if CA_LIST_STR != "":
+                                    strk_out += "\n"
+
+                                for cdp in CDP_LIST_STR.split("\n"):
+                                    out = install_CDP_extra(cdp)
+                                    success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                    time.sleep(2)
+                            if len(success_ca) > 0:
+                                strk_out += "Успешно установлены корневые сертификаты:\n"
+                                for succ in success_ca:
+                                    strk_out += f"{succ}\n"
+
+                            if len(success_cdp) > 0:
+                                if len(success_ca) > 0:
+                                    strk_out += "\n"
+                                strk_out += "Успешно установлены сертификаты отзыва:\n"
+                                for succ in success_cdp:
+                                    strk_out += f"{succ}\n"
+
+                            if len(errors_ca) > 0:
+                                if len(success_ca) > 0 or len(success_cdp) > 0:
+                                    strk_out += "\n"
+                                strk_out += "Ошибка при установке корневых сертификатов:\n"
+                                for err in errors_ca:
+                                    strk_out += f"{err[0]}\n{err[1]}\n"
+
+                            if len(errors_cdp) > 0:
+                                if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
+                                    strk_out += "\n"
+                                strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                                for err in errors_cdp:
+                                    strk_out += f"{err[0]}\n{err[1]}\n"
+
+                            view = ViewCertOutput()
+                            view.set_model(f"{strk_out}")
+                            view.connect("destroy", Gtk.main_quit)
+                            view.show_all()
+                            Gtk.main()
+                        else:
+                            self.print_simple_info(u"Сертификат успешно установлен.")
                         return [True]
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
@@ -3131,6 +3619,76 @@ class InfoClass(Gtk.Window):
             for l in output:
                 if "[ErrorCode: 0x00000000]" in l:
                     self.output_code_token = True
+
+                    cert_info = list_cert(self.cert)
+                    line = cert_info[0]
+                    CA_LIST_STR = ""
+                    CDP_LIST_STR = ""
+                    try:
+                        if type(line[9]) == str and len(line[9]) > 0:
+                            CA_LIST_STR = line[9]
+                        if type(line[10]) == str and len(line[10]) > 0:
+                            CDP_LIST_STR = line[10]
+                    except IndexError:
+                        pass
+                    if CA_LIST_STR != "" or CDP_LIST_STR != "":
+                        self.info_class.print_simple_info(
+                            "Контейнер успешно скопирован\n"
+                            "и связан с сертификатом.\n"
+                            "Сейчас будут установлены дополнительные сертификаты.")
+                        strk_out = ""
+                        errors_ca = []
+                        success_ca = []
+                        errors_cdp = []
+                        success_cdp = []
+                        if CA_LIST_STR != "":
+                            for ca in CA_LIST_STR.split("\n"):
+                                out = install_CA_extra(ca)
+                                success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                time.sleep(2)
+                        if CDP_LIST_STR != "":
+                            if CA_LIST_STR != "":
+                                strk_out += "\n"
+
+                            for cdp in CDP_LIST_STR.split("\n"):
+                                out = install_CDP_extra(cdp)
+                                success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                time.sleep(2)
+                        if len(success_ca) > 0:
+                            strk_out += "Успешно установлены корневые сертификаты:\n"
+                            for succ in success_ca:
+                                strk_out += f"{succ}\n"
+
+                        if len(success_cdp) > 0:
+                            if len(success_ca) > 0:
+                                strk_out += "\n"
+                            strk_out += "Успешно установлены сертификаты отзыва:\n"
+                            for succ in success_cdp:
+                                strk_out += f"{succ}\n"
+
+                        if len(errors_ca) > 0:
+                            if len(success_ca) > 0 or len(success_cdp) > 0:
+                                strk_out += "\n"
+                            strk_out += "Ошибка при установке корневых сертификатов:\n"
+                            for err in errors_ca:
+                                strk_out += f"{err[0]}\n{err[1]}\n"
+
+                        if len(errors_cdp) > 0:
+                            if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
+                                strk_out += "\n"
+                            strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                            for err in errors_cdp:
+                                strk_out += f"{err[0]}\n{err[1]}\n"
+
+                        view = ViewCertOutput()
+                        view.set_model(f"{strk_out}")
+                        view.connect("destroy", Gtk.main_quit)
+                        view.show_all()
+                        Gtk.main()
+                    else:
+                        self.info_class.print_simple_info(
+                            "Контейнер успешно скопирован\n"
+                            "и связан с сертификатом.")
                     return True
         # Вариант с открытой частью не удался, предлагаем пользователю самому выбрать сертификат для закрытой части.
         if not self.output_code_token:
@@ -3162,6 +3720,73 @@ class InfoClass(Gtk.Window):
                         f"/opt/cprocsp/bin/{arch}/certmgr -inst -store uMy -file '{file_name}' -cont '{container}'").readlines()
                     for l in output:
                         if "[ErrorCode: 0x00000000]" in l:
+                            info = get_cert_info_from_file(file_name)
+                            CA_LIST_STR = ""
+                            CDP_LIST_STR = ""
+                            try:
+                                if type(info[0]) == str and len(info[0]) > 0:
+                                    CA_LIST_STR = info[0]
+                                if type(info[1]) == str and len(info[1]) > 0:
+                                    CDP_LIST_STR = info[1]
+                            except IndexError:
+                                pass
+                            if CA_LIST_STR != "" or CDP_LIST_STR != "":
+                                self.print_simple_info(
+                                    u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
+                                strk_out = ""
+                                errors_ca = []
+                                success_ca = []
+                                errors_cdp = []
+                                success_cdp = []
+                                if CA_LIST_STR != "":
+
+                                    for ca in CA_LIST_STR.split("\n"):
+                                        out = install_CA_extra(ca)
+                                        success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                        time.sleep(2)
+                                if CDP_LIST_STR != "":
+                                    if CA_LIST_STR != "":
+                                        strk_out += "\n"
+
+                                    for cdp in CDP_LIST_STR.split("\n"):
+                                        out = install_CDP_extra(cdp)
+                                        success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                        time.sleep(2)
+                                if len(success_ca) > 0:
+                                    strk_out += "Успешно установлены корневые сертификаты:\n"
+                                    for succ in success_ca:
+                                        strk_out += f"{succ}\n"
+
+                                if len(success_cdp) > 0:
+                                    if len(success_ca) > 0:
+                                        strk_out += "\n"
+                                    strk_out += "Успешно установлены сертификаты отзыва:\n"
+                                    for succ in success_cdp:
+                                        strk_out += f"{succ}\n"
+
+                                if len(errors_ca) > 0:
+                                    if len(success_ca) > 0 or len(success_cdp) > 0:
+                                        strk_out += "\n"
+                                    strk_out += "Ошибка при установке корневых сертификатов:\n"
+                                    for err in errors_ca:
+                                        strk_out += f"{err[0]}\n{err[1]}\n"
+
+                                if len(errors_cdp) > 0:
+                                    if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
+                                        strk_out += "\n"
+                                    strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                                    for err in errors_cdp:
+                                        strk_out += f"{err[0]}\n{err[1]}\n"
+
+                                view = ViewCertOutput()
+                                view.set_model(f"{strk_out}")
+                                view.connect("destroy", Gtk.main_quit)
+                                view.show_all()
+                                Gtk.main()
+                            else:
+                                self.info_class.print_simple_info(
+                                    "Контейнер успешно скопирован\n"
+                                    "и связан с сертификатом.")
                             self.output_code_token = True
                             return True
             elif response == Gtk.ResponseType.CANCEL:

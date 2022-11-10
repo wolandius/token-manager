@@ -3,7 +3,7 @@
 #
 
 Name:        token-manager
-Version:     2.3
+Version:     3.0
 Release:     1%{dist}.2
 
 BuildArch:   noarch
@@ -58,9 +58,6 @@ mkdir -p %{buildroot}/%{_sysconfdir}/security/console.apps
 %{__install} -m 0644 cpconfig-pam %{buildroot}%{_sysconfdir}/pam.d/cpconfig-ia32
 %{__install} -m 0644 cpconfig-amd64 %{buildroot}%{_sysconfdir}/security/console.apps/cpconfig-amd64
 %{__install} -m 0644 cpconfig-ia32 %{buildroot}%{_sysconfdir}/security/console.apps/cpconfig-ia32
-mkdir -p %{buildroot}%{_datadir}/doc/%{name}
-%{__install} -m 0644 LICENSE.md %{buildroot}%{_datadir}/doc/%{name}/LICENSE.md
-%{__install} -m 0644 README.md %{buildroot}%{_datadir}/doc/%{name}/README.md
 mkdir -p %{buildroot}%{_datadir}/polkit-1/actions/
 %{__install} -m 0644 org.freedesktop.policykit.pkexec.policy %{buildroot}%{_datadir}/polkit-1/actions/org.freedesktop.policykit.pkexec.policy
 
@@ -75,8 +72,8 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}.desktop
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.desktop
 
 %files
-%{_datadir}/doc/%{name}/LICENSE.md
-%{_datadir}/doc/%{name}/README.md
+%license LICENSE.md
+%doc README.md Changelog
 %{_bindir}/cpconfig-amd64
 %attr(0755,root,root) %{_bindir}/%{name}.py
 %attr(0755,root,root) %{_bindir}/%{name}
@@ -94,6 +91,10 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %attr(0755,root,root) %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Wed Nov 09 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:3.0-1
+- added chain view in certificate window
+- added auto chain install for uMy, token and hdimage certificates
+
 * Mon Oct 17 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.3-1
 - added error window for unsupported encodings on token
 
