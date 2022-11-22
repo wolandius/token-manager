@@ -3,7 +3,7 @@
 #
 
 Name:        token-manager
-Version:     3.0
+Version:     4.0
 Release:     1%{dist}.2
 
 BuildArch:   noarch
@@ -19,8 +19,7 @@ Source0:     %{name}-%{version}.tar.gz
 Requires:    usermode
 Requires:    opensc
 Requires:    xdg-utils
-Requires:    polkit
-Requires:    realmd
+Requires:    python3-chardet
 
 %description
 A GTK front-end for Crypto Pro CSP for RED OS and GosLinux.
@@ -39,58 +38,44 @@ Requires:    %{name}
 
 %prep
 %setup -q
+rm -rf %{name}.egg-info
+
+%build
+python3 setup.py build
 
 %install
 mkdir -p %{buildroot}/%{_bindir}
+
 ln -sf /usr/bin/consolehelper %{buildroot}%{_bindir}/cpconfig-amd64
 ln -sf /usr/bin/consolehelper %{buildroot}%{_bindir}/cpconfig-ia32
-%{__install} -m 0755 %{name}.py %{buildroot}%{_bindir}/%{name}.py
 
-mkdir -p %{buildroot}/%{_datadir}/pixmaps
-mkdir -p %{buildroot}/%{_datadir}/applications
-%{__install} -m 0644 %{name}.png %{buildroot}%{_datadir}/pixmaps/%{name}.png
-%{__install} -m 0755 %{name}.desktop %{buildroot}%{_datadir}/applications/%{name}.desktop
-%{__install} -m 0755 %{name}-ia32.desktop %{buildroot}%{_datadir}/applications/%{name}-ia32.desktop
-
-mkdir -p %{buildroot}/%{_sysconfdir}/pam.d
-mkdir -p %{buildroot}/%{_sysconfdir}/security/console.apps
-%{__install} -m 0644 cpconfig-pam %{buildroot}%{_sysconfdir}/pam.d/cpconfig-amd64
-%{__install} -m 0644 cpconfig-pam %{buildroot}%{_sysconfdir}/pam.d/cpconfig-ia32
-%{__install} -m 0644 cpconfig-amd64 %{buildroot}%{_sysconfdir}/security/console.apps/cpconfig-amd64
-%{__install} -m 0644 cpconfig-ia32 %{buildroot}%{_sysconfdir}/security/console.apps/cpconfig-ia32
-mkdir -p %{buildroot}%{_datadir}/polkit-1/actions/
-%{__install} -m 0644 org.freedesktop.policykit.pkexec.policy %{buildroot}%{_datadir}/polkit-1/actions/org.freedesktop.policykit.pkexec.policy
-
-%{__install} -m 0755 %{name} %{buildroot}%{_bindir}/%{name}
-%{__install} -m 0755 %{name}-ia32 %{buildroot}%{_bindir}/%{name}-ia32
-
+python3 setup.py install --single-version-externally-managed --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 
 %post
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}.desktop
-
+#
 %post ia32
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.desktop
 
-%files
+%files -f INSTALLED_FILES
 %license LICENSE.md
 %doc README.md Changelog
 %{_bindir}/cpconfig-amd64
-%attr(0755,root,root) %{_bindir}/%{name}.py
-%attr(0755,root,root) %{_bindir}/%{name}
-%{_datadir}/polkit-1/actions/org.freedesktop.policykit.pkexec.policy
-%{_sysconfdir}/pam.d/cpconfig-amd64
-%{_sysconfdir}/security/console.apps/cpconfig-amd64
-%{_datadir}/pixmaps/token-manager.png
-%attr(0755,root,root) %{_datadir}/applications/%{name}.desktop
+
+%exclude  /usr/lib/python3*/site-packages/token_manager/*/*.pyc
 
 %files ia32
 %{_bindir}/cpconfig-ia32
-%attr(0755,root,root) %{_bindir}/%{name}-ia32
 %{_sysconfdir}/pam.d/cpconfig-ia32
-%{_sysconfdir}/security/console.apps/cpconfig-ia32
 %attr(0755,root,root) %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Mon Nov 21 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.0-1
+- changed project structure to use setup.py on build
+- rebased context menu
+- added function for mMy install certs
+- added function for manual linking cert and cont
+
 * Wed Nov 09 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:3.0-1
 - added chain view in certificate window
 - added auto chain install for uMy, token and hdimage certificates
@@ -99,7 +84,7 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 - added error window for unsupported encodings on token
 
 * Thu Sep 01 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.2-1
-- Replace beesu to pkexec in cases if root is blocked in OS
+- Replace beesu with pkexec in cases where root is blocked in OS
 
 * Thu Apr 14 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.1-1
 - Removed key -dn and replaced with -keyid

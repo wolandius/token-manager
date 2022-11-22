@@ -1,3 +1,9 @@
+v4.0 Nov 22 2022
+- changed project structure to use setup.py on build
+- rebased context menu
+- added functions for mMy install certs
+- added function for manual linking cert and cont
+
 v3.0 Nov 10 2022
 - added chain view in certificate window
 - added auto chain install for uMy, token and hdimage certificates

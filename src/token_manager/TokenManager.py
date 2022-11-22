@@ -52,7 +52,7 @@ from datetime import datetime
 
 from pathlib import Path
 
-VERSION = "3.0"
+VERSION = "4.0"
 
 GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
 
@@ -692,9 +692,13 @@ def install_crl(file, root):
     return m
 
 
-def inst_cert_from_file(filepath):
-    certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-inst', '-store', 'uMy', '-file',
-                                filepath], stdout=subprocess.PIPE)
+def inst_cert_from_file(filepath, store):
+    if store == "uMy":
+        certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-inst', '-store', store, '-file',
+                                    filepath], stdout=subprocess.PIPE)
+    elif store == "mMy":
+        certmgr = subprocess.Popen(['pkexec', '/opt/cprocsp/bin/%s/certmgr' % arch, '-inst', '-store', store, '-file',
+                                    filepath], stdout=subprocess.PIPE)
     output = certmgr.communicate()[0]
     if certmgr.returncode:
         return output.split("\n")[-1]
@@ -728,7 +732,6 @@ def get_UC_CDP(output):
         resub_string_CDP = r'CDP.*?: '
     certs_UC_str = ""
     certs_UC = re.findall(regex_string_CA, output, re.MULTILINE + re.DOTALL)
-    # print(certs_UC)
     if len(certs_UC) > 0:
         certs_UC = certs_UC[0].strip().split("\n")
         for cert in certs_UC:
@@ -738,7 +741,6 @@ def get_UC_CDP(output):
     certs_UC_str = certs_UC_str[:-1]
     certs_CDP_str = ""
     certs_CDP = re.findall(regex_string_CDP, output, re.MULTILINE + re.DOTALL)
-    # print(certs_CDP)
     if len(certs_CDP) > 0:
         certs_CDP = certs_CDP[0].strip().split("\n")
         for cert in certs_CDP:
@@ -757,7 +759,6 @@ def get_cert_info_from_file(file):
                                    stdout=subprocess.PIPE)
     output = certmgr.communicate()[0].decode('utf-8')
     lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
-    print(lists)
     m = []
     for i in range(1, len(lists), 2):
         certs_UC_str = ""
@@ -1106,7 +1107,7 @@ def get_store_certs(store):
                 counter += 1
     return m
 
-def install_CA_extra(url):
+def install_CA_extra(url, root):
     name = url.split("/")[-1]
     os.system("mkdir -p /tmp/token-manager/CA")
     wget_out = subprocess.Popen(["wget", f"{url}",
@@ -1120,10 +1121,13 @@ def install_CA_extra(url):
         print(error.decode("utf-8").strip())
         return [[url, error.decode("utf-8").strip()], 1]
     else:
-        install_root_cert(f"/tmp/token-manager/CA/{name}", "uRoot")
+        if root == "uRoot":
+            install_root_cert(f"/tmp/token-manager/CA/{name}", "uRoot")
+        elif root == "mRoot":
+            install_root_cert(f"/tmp/token-manager/CA/{name}", "mRoot")
         return [url, 0]
 
-def install_CDP_extra(url):
+def install_CDP_extra(url, root):
     name = url.split("/")[-1]
     os.system("mkdir -p /tmp/token-manager/CDP")
     wget_out = subprocess.Popen(["wget", f"{url}",
@@ -1137,7 +1141,10 @@ def install_CDP_extra(url):
         print(error.decode("utf-8").strip())
         return [[url, error.decode("utf-8").strip()], 1]
     else:
-        install_crl(f"/tmp/token-manager/CDP/{name}", "uRoot")
+        if root == "uRoot":
+            install_crl(f"/tmp/token-manager/CDP/{name}", "uRoot")
+        elif root == "mRoot":
+            install_crl(f"/tmp/token-manager/CDP/{name}", "mRoot")
         return [url, 0]
 
 def list_crls():
@@ -1203,22 +1210,23 @@ def list_root_certs():
     return m
 
 
-def get_token_certs(token):
-    # print(token)
+def get_first_part_certs():
     win = InfoClass()
     csptest = subprocess.Popen(['/opt/cprocsp/bin/%s/csptest' % arch, '-keyset', '-enum_cont', '-unique', '-fqcn',
                                 '-verifyc'], stdout=subprocess.PIPE)
     try:
         if versiontuple(get_cspversion()[2]) <= versiontuple("5.0.11455"):
             output = csptest.communicate()[0].decode('cp1251').encode('utf-8').decode("utf-8")
+            return [csptest, output]
         else:
             output = csptest.communicate()[0].decode("utf-8")
+            return [csptest, output]
     except Exception as e:
         if int(GUI_USERS) == 0:
             print(f"Обнаружена неподдерживаемя кодировка  на токене.\n"
-                                     f"Поддерживаемые кодировки utf8 и cp1251\n"
-                                     f"Завершение работы программы\n\n"
-                                     f"{e}")
+                  f"Поддерживаемые кодировки utf8 и cp1251\n"
+                  f"Завершение работы программы\n\n"
+                  f"{e}")
             exit(-1)
         elif int(GUI_USERS) >= 1:
             win.print_big_error(info=f"Обнаружена неподдерживаемя кодировка  на токене\n"
@@ -1226,6 +1234,11 @@ def get_token_certs(token):
                                      f"Завершение работы программы\n\n"
                                      f"{e}", widtn=850, heigth=400)
             exit(-1)
+
+def get_token_certs(token):
+    csptest = get_first_part_certs()
+    output = csptest[1]
+    csptest = csptest[0]
     certs = []
     if csptest.returncode:
         return u'Ошибка', 1
@@ -1233,6 +1246,20 @@ def get_token_certs(token):
         if token in line:
             certs.append(line)
     return certs, 0
+
+
+def get_ALL_certs():
+    csptest = get_first_part_certs()
+    output = csptest[1]
+    csptest = csptest[0]
+    certs = []
+    if csptest.returncode:
+        return u'Ошибка', 1
+    for line in output.split("\n"):
+        if "\\\\" in line:
+            certs.append(line)
+    return certs, 0
+
 
 def get_tokens():
     list_pcsc = subprocess.Popen(['/opt/cprocsp/bin/%s/list_pcsc' % arch], stdout=subprocess.PIPE)
@@ -1244,7 +1271,6 @@ def get_tokens():
 
 
 def list_cert(cert):
-    print(cert)
     if versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9708"):
         certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-cont', cert],
                                    stdout=subprocess.PIPE)
@@ -1613,13 +1639,25 @@ class MainMenu(Gtk.MenuBar):
         file_item = Gtk.MenuItem(label="_Операции", use_underline=True)
         file_item.set_submenu(file_menu)
 
+        file_menu_license = Gtk.Menu()
+        file_item_license = Gtk.MenuItem(label="_Лицензия", use_underline=True)
+        file_item_license.set_submenu(file_menu_license)
         self.add_license = Gtk.MenuItem(label="_Ввод лицензии КриптоПро CSP", use_underline=True)
         self.view_license = Gtk.MenuItem(label="_Просмотр лицензии КриптоПро CSP", use_underline=True)
 
+        file_menu_operations_certs = Gtk.Menu()
+        file_item_operations_certs = Gtk.MenuItem(label="_Сертификаты", use_underline=True)
+        file_item_operations_certs.set_submenu(file_menu_operations_certs)
+
         self.install_root_certs = Gtk.MenuItem(label="_Установка корневых сертификатов", use_underline=True)
         self.install_crl = Gtk.MenuItem(label="_Установка списков отозванных сертификатов", use_underline=True)
-        self.write_cert_to_cont = Gtk.MenuItem(label="_Записать сертификат в контейнер", use_underline=True)
+        self.write_cert_to_cont = Gtk.MenuItem(label="_Запись сертификата в контейнер", use_underline=True)
         self.export_cont_cert = Gtk.MenuItem(label="_Экспортировать сертификат из контейнера", use_underline=True)
+        self.choose_local_cert_for_cont = Gtk.MenuItem(label="Связать сертификат с контейнером", use_underline=True)
+
+        file_menu_operations_conts = Gtk.Menu()
+        file_item_operations_conts = Gtk.MenuItem(label="_Контейнеры", use_underline=True)
+        file_item_operations_conts.set_submenu(file_menu_operations_conts)
 
         self.view_root = Gtk.MenuItem(label="_Просмотр корневых сертификатов", use_underline=True)
         self.view_crl = Gtk.MenuItem(label="_Просмотр списков отозванных сертификатов", use_underline=True)
@@ -1628,20 +1666,27 @@ class MainMenu(Gtk.MenuBar):
         self.token_container = Gtk.MenuItem(label="_Скопировать контейнер с токена", use_underline=True)
         self.hdimage_container = Gtk.MenuItem(label="_Скопировать контейнер из HDIMAGE на токен", use_underline=True)
 
-        file_menu.append(self.add_license)
-        file_menu.append(self.view_license)
+        file_item.set_submenu(file_menu)
+        file_menu.append(file_item_license)
+        file_menu_license.append(self.add_license)
+        file_menu_license.append(self.view_license)
         file_menu.append(Gtk.SeparatorMenuItem.new())
-        file_menu.append(self.install_root_certs)
-        file_menu.append(self.install_crl)
-        file_menu.append(self.write_cert_to_cont)
-        file_menu.append(self.export_cont_cert)
+
+        file_menu.append(file_item_operations_certs)
+        file_menu_operations_certs.append(self.install_root_certs)
+        file_menu_operations_certs.append(self.install_crl)
+        file_menu_operations_certs.append(self.write_cert_to_cont)
+        file_menu_operations_certs.append(self.export_cont_cert)
+        file_menu_operations_certs.append(self.choose_local_cert_for_cont)
+        file_menu_operations_certs.append(Gtk.SeparatorMenuItem.new())
+        file_menu_operations_certs.append(self.view_root)
+        file_menu_operations_certs.append(self.view_crl)
         file_menu.append(Gtk.SeparatorMenuItem.new())
-        file_menu.append(self.view_root)
-        file_menu.append(self.view_crl)
-        file_menu.append(Gtk.SeparatorMenuItem.new())
-        file_menu.append(self.token_container)
-        file_menu.append(self.usb_flash_container)
-        file_menu.append(self.hdimage_container)
+
+        file_menu.append(file_item_operations_conts)
+        file_menu_operations_conts.append(self.token_container)
+        file_menu_operations_conts.append(self.usb_flash_container)
+        file_menu_operations_conts.append(self.hdimage_container)
         self.append(file_item)
 
         Usefull_menu = Gtk.Menu()
@@ -1702,12 +1747,14 @@ class TokenUI(Gtk.Box):
         self.main_menu.view_crl.connect("activate", self.view_crl)
         self.main_menu.write_cert_to_cont.connect("activate", self.write_cert)
         self.main_menu.export_cont_cert.connect("activate", self.export_container_cert)
+        self.main_menu.choose_local_cert_for_cont.connect("activate", self.info_class.install_local_cert_to_container)
         self.main_menu.actionAbout.connect("activate", self.about_iterate_self)
         self.main_menu.actionUsefull_install.connect("activate", self.usefull_install)
         self.main_menu.actionUsefull_commands.connect("activate", self.usefull_commands)
         self.main_menu.token_container.connect("activate", self.token_container_install)
         self.main_menu.usb_flash_container.connect("activate", self.usb_flash_container_install)
         self.main_menu.hdimage_container.connect("activate", self.hdimage_container_install)
+
         self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.set_border_width(3)
         self.main_box.pack_start(self.main_menu, False, True, 0)
@@ -1899,7 +1946,7 @@ class TokenUI(Gtk.Box):
                             if cont[1]:
                                 container = rf"{cont[0]}"
                                 container = re.sub(r'\\', r'\\\\', container)
-                                container = re.sub(r'\.', r'\\.', container)
+                                container = re.sub(r'../..', r'\\.', container)
                                 container = re.sub(r'\\\\\\', r'\\\\', container)
                                 container = get_container_numeric_name(container)
 
@@ -1954,8 +2001,6 @@ class TokenUI(Gtk.Box):
 
     def select_cert(self, selection):
         self.cert_selection = selection
-        print(self.cert_selection)
-
         (model, iter) = selection.get_selected()
         self.cert_model = model
         self.cert_model_iter = iter
@@ -2066,7 +2111,6 @@ class TokenUI(Gtk.Box):
                     for l in line[9].split("\n"):
                         cert_view.cert_listview.append([l, color])
                     self.CA_LIST_STR = line[9]
-                    print(self.CA_LIST_STR)
             except IndexError:
                 pass
             try:
@@ -2405,8 +2449,11 @@ class TokenUI(Gtk.Box):
         if domain_info:
             status = self.info_class.call_secretnet_configs("доменных пользователей", "domain")
             if status == "installed":
-                ret = self.inst_cert(self.cert)
-
+                if win.ask_about_mmy(self) == Gtk.ResponseType.OK:
+                    store = "mMy"
+                else:
+                    store = "uMy"
+                ret = self.inst_cert(self.cert, store)
                 if ret == u"Сертификат успешно установлен":
                     cert_info = list_cert(self.cert)
                     line = cert_info[0]
@@ -2429,7 +2476,7 @@ class TokenUI(Gtk.Box):
                         success_cdp = []
                         if CA_LIST_STR != "":
                             for ca in CA_LIST_STR.split("\n"):
-                                out = install_CA_extra(ca)
+                                out = install_CA_extra(ca, "mRoot") if store == "mMy" else install_CA_extra(ca, "uRoot")
                                 success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                                 time.sleep(2)
                         if CDP_LIST_STR != "":
@@ -2437,7 +2484,7 @@ class TokenUI(Gtk.Box):
                                 strk_out += "\n"
 
                             for cdp in CDP_LIST_STR.split("\n"):
-                                out = install_CDP_extra(cdp)
+                                out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
                                 success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                                 time.sleep(2)
                         if len(success_ca) > 0:
@@ -2484,7 +2531,11 @@ class TokenUI(Gtk.Box):
             elif status == "canceled":
                 win.print_simple_info("Операция отменена пользователем")
         else:
-            ret = self.inst_cert(self.cert)
+            if win.ask_about_mmy(self) == Gtk.ResponseType.OK:
+                store = "mMy"
+            else:
+                store = "uMy"
+            ret = self.inst_cert(self.cert, store)
             if ret == u"Сертификат успешно установлен":
                 # self.info_class.print_simple_info(ret)
                 cert_info = list_cert(self.cert)
@@ -2509,15 +2560,14 @@ class TokenUI(Gtk.Box):
                     if CA_LIST_STR != "":
 
                         for ca in CA_LIST_STR.split("\n"):
-                            out = install_CA_extra(ca)
+                            out = install_CA_extra(ca, "mRoot") if store == "mMy" else install_CA_extra(ca, "uRoot")
                             success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                             time.sleep(2)
                     if CDP_LIST_STR != "":
                         if CA_LIST_STR != "":
                             strk_out += "\n"
-
                         for cdp in CDP_LIST_STR.split("\n"):
-                            out = install_CDP_extra(cdp)
+                            out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
                             success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                             time.sleep(2)
                     if len(success_ca) > 0:
@@ -2562,8 +2612,11 @@ class TokenUI(Gtk.Box):
                         strk += line
                     self.info_class.print_error(strk)
 
-    def inst_cert(self, cert):
-        certmgr = os.popen(f"/opt/cprocsp/bin/{arch}/certmgr -inst -store uMy -cont '{cert}'").readlines()
+    def inst_cert(self, cert, store):
+        if store == "uMy":
+            certmgr = os.popen(f"/opt/cprocsp/bin/{arch}/certmgr -inst -store uMy -cont '{cert}'").readlines()
+        elif store == "mMy":
+            certmgr = os.popen(f"pkexec /opt/cprocsp/bin/{arch}/certmgr -inst -store mMy -cont '{cert}'").readlines()
         for line in certmgr:
             if "[ErrorCode: 0x00000000]" in line:
                 return u"Сертификат успешно установлен"
@@ -2711,11 +2764,9 @@ class About(Gtk.Window):
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_skip_taskbar_hint(True)
         self.set_resizable(False)
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
-            filename="/usr/share/pixmaps/token-manager.png",
-            width=66,
-            height=66,
-            preserve_aspect_ratio=True)
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(
+            filename="/usr/share/icons/hicolor/64x64/apps/token-manager.png"
+            )
 
         self.image = Gtk.Image.new_from_pixbuf(pixbuf)
         self.box.pack_start(self.image, False, False, 0)
@@ -3041,11 +3092,14 @@ class InfoClass(Gtk.Window):
         if response == Gtk.ResponseType.OK:
             file_name = dialog.get_filename()
             dialog.destroy()
-            ret = inst_cert_from_file(file_name)
+            if self.ask_about_mmy(self) == Gtk.ResponseType.OK:
+                store = "mMy"
+            else:
+                store = "uMy"
+            ret = inst_cert_from_file(file_name, store)
             if ret == u"Сертификат успешно установлен":
                 # self.print_simple_info(ret)
                 info = get_cert_info_from_file(file_name)
-                # print(info)
                 CA_LIST_STR = ""
                 CDP_LIST_STR = ""
                 try:
@@ -3066,7 +3120,7 @@ class InfoClass(Gtk.Window):
                     if CA_LIST_STR != "":
 
                         for ca in CA_LIST_STR.split("\n"):
-                            out = install_CA_extra(ca)
+                            out = install_CA_extra(ca, "mRoot") if store == "mMy" else install_CA_extra(ca, "uRoot")
                             success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                             time.sleep(2)
                     if CDP_LIST_STR != "":
@@ -3074,7 +3128,7 @@ class InfoClass(Gtk.Window):
                             strk_out += "\n"
 
                         for cdp in CDP_LIST_STR.split("\n"):
-                            out = install_CDP_extra(cdp)
+                            out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
                             success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                             time.sleep(2)
                     if len(success_ca) > 0:
@@ -3338,6 +3392,19 @@ class InfoClass(Gtk.Window):
         dialogWindow.destroy()
         return response
 
+    def ask_about_mmy(self, widget):
+        dialogWindow = Gtk.MessageDialog(parent=self,
+                                         modal=True, destroy_with_parent=True,
+                                         message_type=Gtk.MessageType.QUESTION,
+                                         buttons=Gtk.ButtonsType.NONE,
+                                         text="\nУстановить сертифиакт(ы) для локального пользователя\nили для всех сразу? (хранилище mMy)")
+        dialogWindow.set_title("Вопрос")
+        dialogWindow.add_buttons("Локально", Gtk.ResponseType.CANCEL, "Для всех", Gtk.ResponseType.OK)
+        dialogWindow.show_all()
+        response = dialogWindow.run()
+        dialogWindow.destroy()
+        return response
+
     def install_HDIMAGE(self, widget):
         find_hdimage = os.popen(f"/opt/cprocsp/sbin/{arch}/cpconfig -hardware reader -view | grep HDIMAGE").readlines()
         if not find_hdimage[0]:
@@ -3553,7 +3620,7 @@ class InfoClass(Gtk.Window):
                             if CA_LIST_STR != "":
 
                                 for ca in CA_LIST_STR.split("\n"):
-                                    out = install_CA_extra(ca)
+                                    out = install_CA_extra(ca, "uRoot")
                                     success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                                     time.sleep(2)
                             if CDP_LIST_STR != "":
@@ -3561,7 +3628,7 @@ class InfoClass(Gtk.Window):
                                     strk_out += "\n"
 
                                 for cdp in CDP_LIST_STR.split("\n"):
-                                    out = install_CDP_extra(cdp)
+                                    out = install_CDP_extra(cdp, "uRoot")
                                     success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                                     time.sleep(2)
                             if len(success_ca) > 0:
@@ -3602,6 +3669,130 @@ class InfoClass(Gtk.Window):
             dialog.destroy()
             return [False, "Отменено пользователем"]
 
+    def install_local_cert_to_container(self, widget):
+        dialog = Gtk.FileChooserDialog(title="Выберите сертификат пользователя", parent=self,
+                                       action=Gtk.FileChooserAction.OPEN,
+                                       )
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                           Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        filter = Gtk.FileFilter()
+        filter.set_name("Сертификаты")
+        filter.add_mime_type("Сертификаты")
+        filter.add_pattern("*.cer")
+        filter.add_pattern("*.CER")
+        dialog.add_filter(filter)
+        domain_name = os.popen("echo $USERNAME").readlines()[0].strip()
+        if "\\" in domain_name:
+            domain_name = domain_name.split("\\")[1]
+        elif "@" in domain_name:
+            domain_name = domain_name.split("@")[0]
+        find_name = os.popen(f"find /home/ -maxdepth 2 -name *{domain_name}*").readlines()
+        dialog.set_current_folder(f"{find_name}")
+        dialog.set_select_multiple(False)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            file_name = dialog.get_filename()
+            dialog.destroy()
+            if file_name:
+                containers = Gtk.ListStore(str, bool)
+                conts = get_ALL_certs()
+                for cont in conts[0]:
+                    if len(cont) > 0:
+                        containers.append([cont.split("|")[0].strip(), False])
+                if len(containers) > 0:
+                    if self.install_container_from_token(containers):
+                            selected_containers = self.return_liststore_containers()
+                            name = ""
+                            selected = 0
+                            sel_cont = None
+                            for cont in selected_containers:
+                                if cont[1]:
+                                    selected += 1
+                                    sel_cont = cont[0]
+                            if selected > 1:
+                                self.print_error("Необходимо выбрать 1 контейнер\n"
+                                                         "для настройки связывания")
+                            else:
+                                for cont in conts[0]:
+                                    cont = cont.split("|")
+                                    if sel_cont == cont[0].strip():
+                                        sel_cont = cont[1].strip()
+                                        break
+                                output = subprocess.Popen([f"/opt/cprocsp/bin/{arch}/certmgr -inst -store uMy -file '{file_name}' -cont '{sel_cont}'"],
+                                                            stdout=subprocess.PIPE,
+                                                            stderr=subprocess.PIPE, shell=True)
+                                output, error = output.communicate()
+                                if "[ErrorCode: 0x00000000]" in output.decode('utf-8'):
+                                    info = get_cert_info_from_file(file_name)
+                                    CA_LIST_STR = ""
+                                    CDP_LIST_STR = ""
+                                    try:
+                                        if type(info[0]) == str and len(info[0]) > 0:
+                                            CA_LIST_STR = info[0]
+                                        if type(info[1]) == str and len(info[1]) > 0:
+                                            CDP_LIST_STR = info[1]
+                                    except IndexError:
+                                        pass
+                                    if CA_LIST_STR != "" or CDP_LIST_STR != "":
+                                        self.print_simple_info(
+                                            u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
+                                        strk_out = ""
+                                        errors_ca = []
+                                        success_ca = []
+                                        errors_cdp = []
+                                        success_cdp = []
+                                        if CA_LIST_STR != "":
+
+                                            for ca in CA_LIST_STR.split("\n"):
+                                                out = install_CA_extra(ca)
+                                                success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                                time.sleep(2)
+                                        if CDP_LIST_STR != "":
+                                            if CA_LIST_STR != "":
+                                                strk_out += "\n"
+
+                                            for cdp in CDP_LIST_STR.split("\n"):
+                                                out = install_CDP_extra(cdp)
+                                                success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                                time.sleep(2)
+                                        if len(success_ca) > 0:
+                                            strk_out += "Успешно установлены корневые сертификаты:\n"
+                                            for succ in success_ca:
+                                                strk_out += f"{succ}\n"
+
+                                        if len(success_cdp) > 0:
+                                            if len(success_ca) > 0:
+                                                strk_out += "\n"
+                                            strk_out += "Успешно установлены сертификаты отзыва:\n"
+                                            for succ in success_cdp:
+                                                strk_out += f"{succ}\n"
+
+                                        if len(errors_ca) > 0:
+                                            if len(success_ca) > 0 or len(success_cdp) > 0:
+                                                strk_out += "\n"
+                                            strk_out += "Ошибка при установке корневых сертификатов:\n"
+                                            for err in errors_ca:
+                                                strk_out += f"{err[0]}\n{err[1]}\n"
+
+                                        if len(errors_cdp) > 0:
+                                            if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
+                                                strk_out += "\n"
+                                            strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                                            for err in errors_cdp:
+                                                strk_out += f"{err[0]}\n{err[1]}\n"
+
+                                        view = ViewCertOutput()
+                                        view.set_model(f"{strk_out}")
+                                        view.connect("destroy", Gtk.main_quit)
+                                        view.show_all()
+                                        Gtk.main()
+                                    else:
+                                        self.info_class.print_simple_info(
+                                            "Сертификат успешно связан с контейнером.")
+        elif response == Gtk.ResponseType.CANCEL:
+            dialog.destroy()
+
+
     def install_cert_from_or_to_container(self, container, name_cont):
         # Требуется попробовать получить открытую часть хранилища автоматически, установленного локально в HDIMAGE
         self.output_code_token = False
@@ -3619,7 +3810,6 @@ class InfoClass(Gtk.Window):
             for l in output:
                 if "[ErrorCode: 0x00000000]" in l:
                     self.output_code_token = True
-
                     cert_info = list_cert(self.cert)
                     line = cert_info[0]
                     CA_LIST_STR = ""
@@ -3643,7 +3833,7 @@ class InfoClass(Gtk.Window):
                         success_cdp = []
                         if CA_LIST_STR != "":
                             for ca in CA_LIST_STR.split("\n"):
-                                out = install_CA_extra(ca)
+                                out = install_CA_extra(ca, "uRoot")
                                 success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                                 time.sleep(2)
                         if CDP_LIST_STR != "":
@@ -3651,7 +3841,7 @@ class InfoClass(Gtk.Window):
                                 strk_out += "\n"
 
                             for cdp in CDP_LIST_STR.split("\n"):
-                                out = install_CDP_extra(cdp)
+                                out = install_CDP_extra(cdp, "uRoot")
                                 success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                                 time.sleep(2)
                         if len(success_ca) > 0:
@@ -3741,7 +3931,7 @@ class InfoClass(Gtk.Window):
                                 if CA_LIST_STR != "":
 
                                     for ca in CA_LIST_STR.split("\n"):
-                                        out = install_CA_extra(ca)
+                                        out = install_CA_extra(ca, "uRoot")
                                         success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                                         time.sleep(2)
                                 if CDP_LIST_STR != "":
@@ -3749,7 +3939,7 @@ class InfoClass(Gtk.Window):
                                         strk_out += "\n"
 
                                     for cdp in CDP_LIST_STR.split("\n"):
-                                        out = install_CDP_extra(cdp)
+                                        out = install_CDP_extra(cdp, "uRoot")
                                         success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                                         time.sleep(2)
                                 if len(success_ca) > 0:
@@ -4022,9 +4212,23 @@ class InfoClass(Gtk.Window):
         self.liststore_flashes[path][1] = not self.liststore_flashes[path][1]
 
 
-def main(gtkbox, isApp):
-    widget = TokenUI(gtkbox, isApp)
-    return widget
+def main():
+    window = Gtk.ApplicationWindow()
+    window.set_title(re.sub("\n", "", module_name()))
+    window.set_position(Gtk.WindowPosition.CENTER)
+    window.set_default_icon_name('token-manager')
+    containerr = Gtk.Notebook()
+    containerr.set_show_tabs(False)
+    paned = Gtk.Paned()
+    paned.add2(containerr)
+    main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    main_box.pack_start(paned, True, True, 0)
+    combox = TokenUI(main_box, True)
+    containerr.append_page(combox)
+    window.add(main_box)
+    window.connect("destroy", Gtk.main_quit)
+    window.show_all()
+    Gtk.main()
 
 
 def module_name():
@@ -4034,26 +4238,6 @@ def module_name():
 def module_icon():
     return "token-manager.resized.png"
 
-
-class moduleUI(Gtk.ApplicationWindow):
-    def __init__(self):
-        super(moduleUI, self).__init__()
-        self.set_title(re.sub("\n", "", module_name()))
-        self.set_position(Gtk.WindowPosition.CENTER)
-        self.set_icon_from_file('/usr/share/pixmaps/token-manager.png')
-        self.containerr = Gtk.Notebook()
-        self.containerr.set_show_tabs(False)
-        self.paned = Gtk.Paned()
-        self.paned.add2(self.containerr)
-        self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self.main_box.pack_start(self.paned, True, True, 0)
-        combox = main(self.containerr, True)
-        self.containerr.append_page(combox)
-        self.add(self.main_box)
-
-
 if __name__ == "__main__":
-    window = moduleUI()
-    window.connect("destroy", Gtk.main_quit)
-    window.show_all()
-    Gtk.main()
+    window = main()
+

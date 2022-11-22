@@ -1,8 +1,0 @@
-#!/bin/bash
-
-if [ "$#" -ne 0 ]; then
-   /usr/bin/python3 /usr/bin/token-manager.py $@
-else
-   /usr/bin/python3 /usr/bin/token-manager.py
-fi
-
