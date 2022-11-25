@@ -2,24 +2,28 @@
 # spec file for package token-manager
 #
 
-Name:        token-manager
-Version:     4.0
-Release:     1%{dist}.2
+Name:           token-manager
+Version:        4.0
+Release:        2%{dist}.2
 
-BuildArch:   noarch
+BuildArch:      noarch
 
-Summary:     Certificate manager for CryptoPro CSP
-Summary(ru): Менеджер сертификатов для CryptoPro CSP
-License:     MIT
-Group:       System Environment/Base
-Url:         https://github.com/wolandius/token-manager
+Summary:        Certificate manager for CryptoPro CSP
+Summary(ru):    Менеджер сертификатов для CryptoPro CSP
+License:        MIT
+Group:          System Environment/Base
+Url:            https://github.com/wolandius/token-manager
 
-Source0:     %{name}-%{version}.tar.gz
+Source0:        %{name}-%{version}.tar.gz
 
-Requires:    usermode
-Requires:    opensc
-Requires:    xdg-utils
-Requires:    python3-chardet
+Buildrequires:  python3
+Buildrequires:  python3-setuptools
+
+Requires:       opensc
+Requires:       python3-chardet
+Requires:       usermode
+Requires:       xdg-utils
+
 
 %description
 A GTK front-end for Crypto Pro CSP for RED OS and GosLinux.
@@ -28,10 +32,10 @@ A GTK front-end for Crypto Pro CSP for RED OS and GosLinux.
 Графическая оболочка GTK для Crypto Pro CSP для операционных систем РЕД ОС и ГосЛинукс.
 
 %package ia32
-Summary:     Certificate manager for 32-bit CryptoPro CSP
-Summary(ru): Менеджер сертификатов для 32-битной CryptoPro CSP
-BuildArch:   noarch
-Requires:    %{name}
+Summary:        Certificate manager for 32-bit CryptoPro CSP
+Summary(ru):    Менеджер сертификатов для 32-битной CryptoPro CSP
+BuildArch:      noarch
+Requires:       %{name}
 
 %description -l ru ia32
 Графическая оболочка GTK для 32-битной Crypto Pro CSP для операционных систем РЕД ОС и ГосЛинукс.
@@ -53,7 +57,7 @@ python3 setup.py install --single-version-externally-managed --root=$RPM_BUILD_R
 
 %post
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}.desktop
-#
+
 %post ia32
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.desktop
 
@@ -61,27 +65,27 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %license LICENSE.md
 %doc README.md Changelog
 %{_bindir}/cpconfig-amd64
-
+%exclude %{_datadir}/applications/%{name}-ia32.desktop
 %exclude  /usr/lib/python3*/site-packages/token_manager/*/*.pyc
 
 %files ia32
 %{_bindir}/cpconfig-ia32
 %{_sysconfdir}/pam.d/cpconfig-ia32
-%attr(0755,root,root) %{_datadir}/applications/%{name}-ia32.desktop
+%{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
-* Mon Nov 21 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.0-1
+* Thu Nov 24 2022 Alexey Rodionov <alexey.rodionov@red-soft.ru> - 0:4.0-2
+- solve conflict between desktop-files
+
+* Wed Nov 23 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.0-1
 - changed project structure to use setup.py on build
 - rebased context menu
-- added function for mMy install certs
+- added functions for mMy install certs
 - added function for manual linking cert and cont
 
 * Wed Nov 09 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:3.0-1
 - added chain view in certificate window
 - added auto chain install for uMy, token and hdimage certificates
-
-* Mon Oct 17 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.3-1
-- added error window for unsupported encodings on token
 
 * Thu Sep 01 2022 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:2.2-1
 - Replace beesu with pkexec in cases where root is blocked in OS
