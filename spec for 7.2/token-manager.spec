@@ -3,8 +3,8 @@
 #
 
 Name:           token-manager
-Version:        4.0
-Release:        2%{dist}.2
+Version:        4.1
+Release:        1%{dist}.2
 
 BuildArch:      noarch
 
@@ -74,6 +74,10 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Thu Jan 17 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.1-1
+- hide ask_about_mmy dialog on crypto 4
+- improve ViewCertOutput and InfoClass dialogs
+
 * Thu Nov 24 2022 Alexey Rodionov <alexey.rodionov@red-soft.ru> - 0:4.0-2
 - solve conflict between desktop-files
 

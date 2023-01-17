@@ -52,7 +52,7 @@ from datetime import datetime
 
 from pathlib import Path
 
-VERSION = "4.0"
+VERSION = "4.1"
 
 GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
 
@@ -2449,8 +2449,12 @@ class TokenUI(Gtk.Box):
         if domain_info:
             status = self.info_class.call_secretnet_configs("доменных пользователей", "domain")
             if status == "installed":
-                if win.ask_about_mmy(self) == Gtk.ResponseType.OK:
-                    store = "mMy"
+
+                if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.0"):
+                    if win.ask_about_mmy(self) == Gtk.ResponseType.OK:
+                        store = "mMy"
+                    else:
+                        store = "uMy"
                 else:
                     store = "uMy"
                 ret = self.inst_cert(self.cert, store)
@@ -2469,7 +2473,7 @@ class TokenUI(Gtk.Box):
                     if CA_LIST_STR != "" or CDP_LIST_STR != "":
                         self.info_class.print_simple_info(
                             u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                        strk_out = ""
+                        strk_out = []
                         errors_ca = []
                         success_ca = []
                         errors_cdp = []
@@ -2480,41 +2484,36 @@ class TokenUI(Gtk.Box):
                                 success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                                 time.sleep(2)
                         if CDP_LIST_STR != "":
-                            if CA_LIST_STR != "":
-                                strk_out += "\n"
-
                             for cdp in CDP_LIST_STR.split("\n"):
                                 out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
                                 success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                                 time.sleep(2)
                         if len(success_ca) > 0:
-                            strk_out += "Успешно установлены корневые сертификаты:\n"
+                            strk_out.append("Успешно установлены корневые сертификаты:")
                             for succ in success_ca:
-                                strk_out += f"{succ}\n"
+                                strk_out.append(f"{succ}")
 
                         if len(success_cdp) > 0:
                             if len(success_ca) > 0:
                                 strk_out += "\n"
-                            strk_out += "Успешно установлены сертификаты отзыва:\n"
+                            strk_out.append("Успешно установлены сертификаты отзыва:")
                             for succ in success_cdp:
-                                strk_out += f"{succ}\n"
+                                strk_out.append(f"{succ}")
 
                         if len(errors_ca) > 0:
                             if len(success_ca) > 0 or len(success_cdp) > 0:
                                 strk_out += "\n"
-                            strk_out += "Ошибка при установке корневых сертификатов:\n"
+                            strk_out.append("Ошибка при установке корневых сертификатов:")
                             for err in errors_ca:
-                                strk_out += f"{err[0]}\n{err[1]}\n"
+                                strk_out.append(f"{err[0]}\n{err[1]}")
 
                         if len(errors_cdp) > 0:
-                            if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
-                                strk_out += "\n"
-                            strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                            strk_out.append("Ошибка при установке сертификатов отзыва:")
                             for err in errors_cdp:
-                                strk_out += f"{err[0]}\n{err[1]}\n"
+                                strk_out.append(f"{err[0]}\n{err[1]}")
 
                         view = ViewCertOutput()
-                        view.set_model(f"{strk_out}")
+                        view.set_model(strk_out)
                         view.connect("destroy", Gtk.main_quit)
                         view.show_all()
                         Gtk.main()
@@ -2531,8 +2530,11 @@ class TokenUI(Gtk.Box):
             elif status == "canceled":
                 win.print_simple_info("Операция отменена пользователем")
         else:
-            if win.ask_about_mmy(self) == Gtk.ResponseType.OK:
-                store = "mMy"
+            if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.0"):
+                if win.ask_about_mmy(self) == Gtk.ResponseType.OK:
+                    store = "mMy"
+                else:
+                    store = "uMy"
             else:
                 store = "uMy"
             ret = self.inst_cert(self.cert, store)
@@ -2552,7 +2554,7 @@ class TokenUI(Gtk.Box):
                 if CA_LIST_STR != "" or CDP_LIST_STR != "":
                     self.info_class.print_simple_info(
                         u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                    strk_out = ""
+                    strk_out = []
                     errors_ca = []
                     success_ca = []
                     errors_cdp = []
@@ -2571,33 +2573,27 @@ class TokenUI(Gtk.Box):
                             success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                             time.sleep(2)
                     if len(success_ca) > 0:
-                        strk_out += "Успешно установлены корневые сертификаты:\n"
+                        strk_out.append("Успешно установлены корневые сертификаты:")
                         for succ in success_ca:
-                            strk_out += f"{succ}\n"
+                            strk_out.append(f"{succ}")
 
                     if len(success_cdp) > 0:
-                        if len(success_ca) > 0:
-                            strk_out += "\n"
-                        strk_out += "Успешно установлены сертификаты отзыва:\n"
+                        strk_out.append("Успешно установлены сертификаты отзыва:")
                         for succ in success_cdp:
-                            strk_out += f"{succ}\n"
+                            strk_out.append(f"{succ}")
 
                     if len(errors_ca) > 0:
-                        if len(success_ca) > 0 or len(success_cdp) > 0:
-                            strk_out += "\n"
-                        strk_out += "Ошибка при установке корневых сертификатов:\n"
+                        strk_out.append("Ошибка при установке корневых сертификатов:")
                         for err in errors_ca:
-                            strk_out += f"{err[0]}\n{err[1]}\n"
+                            strk_out.append(f"{err[0]}\n{err[1]}")
 
                     if len(errors_cdp) > 0:
-                        if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
-                            strk_out += "\n"
-                        strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                        strk_out.append("Ошибка при установке сертификатов отзыва:")
                         for err in errors_cdp:
-                            strk_out += f"{err[0]}\n{err[1]}\n"
+                            strk_out.append(f"{err[0]}\n{err[1]}")
 
                     view = ViewCertOutput()
-                    view.set_model(f"{strk_out}")
+                    view.set_model(strk_out)
                     view.connect("destroy", Gtk.main_quit)
                     view.show_all()
                     Gtk.main()
@@ -2955,11 +2951,13 @@ class ViewCertOutput(Gtk.ApplicationWindow):
 
     def set_model(self, info):
         self.liststore = Gtk.ListStore(str)
-        self.liststore.append([info])
+        for i in info:
+            self.liststore.append([i])
         treeview = Gtk.TreeView(model=self.liststore)
-        sel = treeview.get_selection()
-        sel.set_mode(Gtk.SelectionMode.NONE)
+        # sel = treeview.get_selection()
+        # sel.set_mode(Gtk.SelectionMode.NONE)
         renderer_text = Gtk.CellRendererText()
+        renderer_text.set_property("editable", True)
         column_text = Gtk.TreeViewColumn("", renderer_text, text=0)
         treeview.append_column(column_text)
         scrolled_tree = Gtk.ScrolledWindow()
@@ -3092,8 +3090,12 @@ class InfoClass(Gtk.Window):
         if response == Gtk.ResponseType.OK:
             file_name = dialog.get_filename()
             dialog.destroy()
-            if self.ask_about_mmy(self) == Gtk.ResponseType.OK:
-                store = "mMy"
+            if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.0"):
+                print(versiontuple(get_cspversion()[2]))
+                if self.ask_about_mmy(self) == Gtk.ResponseType.OK:
+                    store = "mMy"
+                else:
+                    store = "uMy"
             else:
                 store = "uMy"
             ret = inst_cert_from_file(file_name, store)
@@ -3112,53 +3114,43 @@ class InfoClass(Gtk.Window):
                 if CA_LIST_STR != "" or CDP_LIST_STR != "":
                     self.print_simple_info(
                         u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                    strk_out = ""
+                    strk_out = []
                     errors_ca = []
                     success_ca = []
                     errors_cdp = []
                     success_cdp = []
                     if CA_LIST_STR != "":
-
                         for ca in CA_LIST_STR.split("\n"):
                             out = install_CA_extra(ca, "mRoot") if store == "mMy" else install_CA_extra(ca, "uRoot")
                             success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                             time.sleep(2)
                     if CDP_LIST_STR != "":
-                        if CA_LIST_STR != "":
-                            strk_out += "\n"
-
                         for cdp in CDP_LIST_STR.split("\n"):
                             out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
                             success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                             time.sleep(2)
                     if len(success_ca) > 0:
-                        strk_out += "Успешно установлены корневые сертификаты:\n"
+                        strk_out.append("Успешно установлены корневые сертификаты:")
                         for succ in success_ca:
-                            strk_out += f"{succ}\n"
+                            strk_out.append(f"{succ}")
 
                     if len(success_cdp) > 0:
-                        if len(success_ca) > 0:
-                            strk_out += "\n"
-                        strk_out += "Успешно установлены сертификаты отзыва:\n"
+                        strk_out.append("Успешно установлены сертификаты отзыва:")
                         for succ in success_cdp:
-                            strk_out += f"{succ}\n"
+                            strk_out.append(f"{succ}")
 
                     if len(errors_ca) > 0:
-                        if len(success_ca) > 0 or len(success_cdp) > 0:
-                            strk_out += "\n"
-                        strk_out += "Ошибка при установке корневых сертификатов:\n"
+                        strk_out.append("Ошибка при установке корневых сертификатов:")
                         for err in errors_ca:
-                            strk_out += f"{err[0]}\n{err[1]}\n"
+                            strk_out.append(f"{err[0]}\n{err[1]}")
 
                     if len(errors_cdp) > 0:
-                        if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
-                            strk_out += "\n"
-                        strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                        strk_out.append("Ошибка при установке сертификатов отзыва:")
                         for err in errors_cdp:
-                            strk_out += f"{err[0]}\n{err[1]}\n"
+                            strk_out.append(f"{err[0]}\n{err[1]}")
 
                     view = ViewCertOutput()
-                    view.set_model(f"{strk_out}")
+                    view.set_model(strk_out)
                     view.connect("destroy", Gtk.main_quit)
                     view.show_all()
                     Gtk.main()
@@ -3397,7 +3389,7 @@ class InfoClass(Gtk.Window):
                                          modal=True, destroy_with_parent=True,
                                          message_type=Gtk.MessageType.QUESTION,
                                          buttons=Gtk.ButtonsType.NONE,
-                                         text="\nУстановить сертифиакт(ы) для локального пользователя\nили для всех сразу? (хранилище mMy)")
+                                         text="\nУстановить сертифиакт(ы) для локального пользователя(хранилище uMy)\nили для всех сразу(хранилище mMy)?")
         dialogWindow.set_title("Вопрос")
         dialogWindow.add_buttons("Локально", Gtk.ResponseType.CANCEL, "Для всех", Gtk.ResponseType.OK)
         dialogWindow.show_all()
@@ -3612,7 +3604,7 @@ class InfoClass(Gtk.Window):
                         if CA_LIST_STR != "" or CDP_LIST_STR != "":
                             self.print_simple_info(
                                 u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                            strk_out = ""
+                            strk_out = []
                             errors_ca = []
                             success_ca = []
                             errors_cdp = []
@@ -3632,33 +3624,29 @@ class InfoClass(Gtk.Window):
                                     success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                                     time.sleep(2)
                             if len(success_ca) > 0:
-                                strk_out += "Успешно установлены корневые сертификаты:\n"
+                                strk_out.append("Успешно установлены корневые сертификаты:")
                                 for succ in success_ca:
-                                    strk_out += f"{succ}\n"
+                                    strk_out.append(f"{succ}")
 
                             if len(success_cdp) > 0:
-                                if len(success_ca) > 0:
-                                    strk_out += "\n"
-                                strk_out += "Успешно установлены сертификаты отзыва:\n"
+                                strk_out.append("Успешно установлены сертификаты отзыва:")
                                 for succ in success_cdp:
-                                    strk_out += f"{succ}\n"
+                                    strk_out.append(f"{succ}")
 
                             if len(errors_ca) > 0:
-                                if len(success_ca) > 0 or len(success_cdp) > 0:
-                                    strk_out += "\n"
-                                strk_out += "Ошибка при установке корневых сертификатов:\n"
+                                strk_out.append("Ошибка при установке корневых сертификатов:")
                                 for err in errors_ca:
-                                    strk_out += f"{err[0]}\n{err[1]}\n"
+                                    strk_out.append(f"{err[0]}\n{err[1]}")
 
                             if len(errors_cdp) > 0:
                                 if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
                                     strk_out += "\n"
-                                strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                                strk_out.append("Ошибка при установке сертификатов отзыва:")
                                 for err in errors_cdp:
-                                    strk_out += f"{err[0]}\n{err[1]}\n"
+                                    strk_out.append(f"{err[0]}\n{err[1]}")
 
                             view = ViewCertOutput()
-                            view.set_model(f"{strk_out}")
+                            view.set_model(strk_out)
                             view.connect("destroy", Gtk.main_quit)
                             view.show_all()
                             Gtk.main()
@@ -3736,7 +3724,7 @@ class InfoClass(Gtk.Window):
                                     if CA_LIST_STR != "" or CDP_LIST_STR != "":
                                         self.print_simple_info(
                                             u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                                        strk_out = ""
+                                        strk_out = []
                                         errors_ca = []
                                         success_ca = []
                                         errors_cdp = []
@@ -3756,38 +3744,32 @@ class InfoClass(Gtk.Window):
                                                 success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                                                 time.sleep(2)
                                         if len(success_ca) > 0:
-                                            strk_out += "Успешно установлены корневые сертификаты:\n"
+                                            strk_out.append("Успешно установлены корневые сертификаты:")
                                             for succ in success_ca:
-                                                strk_out += f"{succ}\n"
+                                                strk_out.append(f"{succ}")
 
                                         if len(success_cdp) > 0:
-                                            if len(success_ca) > 0:
-                                                strk_out += "\n"
-                                            strk_out += "Успешно установлены сертификаты отзыва:\n"
+                                            strk_out.append("Успешно установлены сертификаты отзыва:")
                                             for succ in success_cdp:
-                                                strk_out += f"{succ}\n"
+                                                strk_out.append(f"{succ}")
 
                                         if len(errors_ca) > 0:
-                                            if len(success_ca) > 0 or len(success_cdp) > 0:
-                                                strk_out += "\n"
-                                            strk_out += "Ошибка при установке корневых сертификатов:\n"
+                                            strk_out.append("Ошибка при установке корневых сертификатов:")
                                             for err in errors_ca:
-                                                strk_out += f"{err[0]}\n{err[1]}\n"
+                                                strk_out.append(f"{err[0]}\n{err[1]}")
 
                                         if len(errors_cdp) > 0:
-                                            if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
-                                                strk_out += "\n"
-                                            strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                                            strk_out.append("Ошибка при установке сертификатов отзыва:")
                                             for err in errors_cdp:
-                                                strk_out += f"{err[0]}\n{err[1]}\n"
+                                                strk_out.append(f"{err[0]}\n{err[1]}")
 
                                         view = ViewCertOutput()
-                                        view.set_model(f"{strk_out}")
+                                        view.set_model(strk_out)
                                         view.connect("destroy", Gtk.main_quit)
                                         view.show_all()
                                         Gtk.main()
                                     else:
-                                        self.info_class.print_simple_info(
+                                        self.print_simple_info(
                                             "Сертификат успешно связан с контейнером.")
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
@@ -3810,7 +3792,7 @@ class InfoClass(Gtk.Window):
             for l in output:
                 if "[ErrorCode: 0x00000000]" in l:
                     self.output_code_token = True
-                    cert_info = list_cert(self.cert)
+                    cert_info = list_cert(cert)
                     line = cert_info[0]
                     CA_LIST_STR = ""
                     CDP_LIST_STR = ""
@@ -3822,11 +3804,11 @@ class InfoClass(Gtk.Window):
                     except IndexError:
                         pass
                     if CA_LIST_STR != "" or CDP_LIST_STR != "":
-                        self.info_class.print_simple_info(
+                        self.print_simple_info(
                             "Контейнер успешно скопирован\n"
                             "и связан с сертификатом.\n"
                             "Сейчас будут установлены дополнительные сертификаты.")
-                        strk_out = ""
+                        strk_out = []
                         errors_ca = []
                         success_ca = []
                         errors_cdp = []
@@ -3837,41 +3819,32 @@ class InfoClass(Gtk.Window):
                                 success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                                 time.sleep(2)
                         if CDP_LIST_STR != "":
-                            if CA_LIST_STR != "":
-                                strk_out += "\n"
-
-                            for cdp in CDP_LIST_STR.split("\n"):
+                             for cdp in CDP_LIST_STR.split("\n"):
                                 out = install_CDP_extra(cdp, "uRoot")
                                 success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                                 time.sleep(2)
                         if len(success_ca) > 0:
-                            strk_out += "Успешно установлены корневые сертификаты:\n"
+                            strk_out.append("Успешно установлены корневые сертификаты:")
                             for succ in success_ca:
-                                strk_out += f"{succ}\n"
+                                strk_out.append(f"{succ}")
 
                         if len(success_cdp) > 0:
-                            if len(success_ca) > 0:
-                                strk_out += "\n"
-                            strk_out += "Успешно установлены сертификаты отзыва:\n"
+                            strk_out.append("Успешно установлены сертификаты отзыва:")
                             for succ in success_cdp:
-                                strk_out += f"{succ}\n"
+                                strk_out.append(f"{succ}")
 
                         if len(errors_ca) > 0:
-                            if len(success_ca) > 0 or len(success_cdp) > 0:
-                                strk_out += "\n"
-                            strk_out += "Ошибка при установке корневых сертификатов:\n"
+                            strk_out.append("Ошибка при установке корневых сертификатов:")
                             for err in errors_ca:
                                 strk_out += f"{err[0]}\n{err[1]}\n"
 
                         if len(errors_cdp) > 0:
-                            if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
-                                strk_out += "\n"
-                            strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                            strk_out.append("Ошибка при установке сертификатов отзыва:")
                             for err in errors_cdp:
-                                strk_out += f"{err[0]}\n{err[1]}\n"
+                                strk_out.append(f"{err[0]}\n{err[1]}")
 
                         view = ViewCertOutput()
-                        view.set_model(f"{strk_out}")
+                        view.set_model(strk_out)
                         view.connect("destroy", Gtk.main_quit)
                         view.show_all()
                         Gtk.main()
@@ -3923,7 +3896,7 @@ class InfoClass(Gtk.Window):
                             if CA_LIST_STR != "" or CDP_LIST_STR != "":
                                 self.print_simple_info(
                                     u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                                strk_out = ""
+                                strk_out = []
                                 errors_ca = []
                                 success_ca = []
                                 errors_cdp = []
@@ -3935,9 +3908,6 @@ class InfoClass(Gtk.Window):
                                         success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                                         time.sleep(2)
                                 if CDP_LIST_STR != "":
-                                    if CA_LIST_STR != "":
-                                        strk_out += "\n"
-
                                     for cdp in CDP_LIST_STR.split("\n"):
                                         out = install_CDP_extra(cdp, "uRoot")
                                         success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
@@ -3945,31 +3915,29 @@ class InfoClass(Gtk.Window):
                                 if len(success_ca) > 0:
                                     strk_out += "Успешно установлены корневые сертификаты:\n"
                                     for succ in success_ca:
-                                        strk_out += f"{succ}\n"
+                                        strk_out.append(f"{succ}")
 
                                 if len(success_cdp) > 0:
                                     if len(success_ca) > 0:
                                         strk_out += "\n"
-                                    strk_out += "Успешно установлены сертификаты отзыва:\n"
+                                    strk_out.append("Успешно установлены сертификаты отзыва:")
                                     for succ in success_cdp:
-                                        strk_out += f"{succ}\n"
+                                        strk_out.append(f"{succ}")
 
                                 if len(errors_ca) > 0:
-                                    if len(success_ca) > 0 or len(success_cdp) > 0:
-                                        strk_out += "\n"
-                                    strk_out += "Ошибка при установке корневых сертификатов:\n"
+                                    strk_out.append("Ошибка при установке корневых сертификатов:")
                                     for err in errors_ca:
                                         strk_out += f"{err[0]}\n{err[1]}\n"
 
                                 if len(errors_cdp) > 0:
                                     if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
                                         strk_out += "\n"
-                                    strk_out += "Ошибка при установке сертификатов отзыва:\n"
+                                    strk_out.append("Ошибка при установке сертификатов отзыва:")
                                     for err in errors_cdp:
-                                        strk_out += f"{err[0]}\n{err[1]}\n"
+                                        strk_out.append(f"{err[0]}\n{err[1]}")
 
                                 view = ViewCertOutput()
-                                view.set_model(f"{strk_out}")
+                                view.set_model(strk_out)
                                 view.connect("destroy", Gtk.main_quit)
                                 view.show_all()
                                 Gtk.main()
@@ -4123,6 +4091,53 @@ class InfoClass(Gtk.Window):
                 return "canceled"
         else:
             return "installed"
+
+    def install_container_from_hdimage(self, liststore):
+        # сделать окно выбора контейнера из списка распознанных системой
+        # команда из ТГ по экспортированияю контейнера попробовать выполнить автоинсталл,
+        # в случае неудачи сделать по БЗ с явным указание открытого ключа
+        self.liststore_hdimage_containers = liststore
+        dialogWindow = Gtk.MessageDialog(parent=self,
+                                         modal=True, destroy_with_parent=True,
+                                         message_type=Gtk.MessageType.QUESTION,
+                                         buttons=Gtk.ButtonsType.OK_CANCEL)
+        dialogWindow.set_title("Выберите контейнер из hdimage")
+        dialogWindow.set_resizable(True)
+        dialogBox = dialogWindow.get_content_area()
+
+        treeview = Gtk.TreeView(model=self.liststore_hdimage_containers)
+        max_len = 0
+        for elem in self.liststore_hdimage_containers:
+            if max_len < len(elem[0]):
+                max_len = len(elem[0])
+        renderer_text = Gtk.CellRendererText()
+        column_text = Gtk.TreeViewColumn("Контейнеры", renderer_text, text=0)
+        treeview.append_column(column_text)
+
+        renderer_toggle = Gtk.CellRendererToggle()
+        renderer_toggle.connect("toggled", self.on_cell_hdimage_toggled)
+
+        column_toggle = Gtk.TreeViewColumn("Выбранный", renderer_toggle, active=1)
+        treeview.append_column(column_toggle)
+
+        sel = treeview.get_selection()
+        sel.set_mode(Gtk.SelectionMode.NONE)
+        scrolled_tree = Gtk.ScrolledWindow()
+        scrolled_tree.add(treeview)
+        if max_len < 40:
+            dialogWindow.set_size_request(380, 200)
+            scrolled_tree.set_size_request(380, 200)
+        else:
+            dialogWindow.set_size_request(580, 200)
+            scrolled_tree.set_size_request(580, 200)
+        dialogBox.pack_end(scrolled_tree, True, True, 0)
+        dialogWindow.show_all()
+        response = dialogWindow.run()
+        dialogWindow.destroy()
+        if (response == Gtk.ResponseType.CANCEL):
+            return False
+        else:
+            return True
 
     def install_cert_from_or_to_usb_flash(self, container):
         # Требуется попробовать получить открытую часть хранилища автоматически, установленного локально в HDIMAGE

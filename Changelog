@@ -1,3 +1,7 @@
+v4.1 Jan 17 2023
+- hide ask_about_mmy dialog on crypto 4
+- improve ViewCertOutput and InfoClass dialogs
+
 v4.0 Nov 22 2022
 - changed project structure to use setup.py on build
 - rebased context menu
