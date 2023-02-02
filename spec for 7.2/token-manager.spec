@@ -67,6 +67,7 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %{_bindir}/cpconfig-amd64
 %exclude %{_datadir}/applications/%{name}-ia32.desktop
 %exclude  /usr/lib/python3*/site-packages/token_manager/*/*.pyc
+%exclude  %{_sysconfdir}/pam.d/cpconfig-ia32
 
 %files ia32
 %{_bindir}/cpconfig-ia32
@@ -74,7 +75,11 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
-* Thu Jan 17 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.1-1
+* Thu Feb 02 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.2-1
+- added compitibility with appimage format
+- fix in set_license function
+
+* Tue Jan 17 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.1-1
 - hide ask_about_mmy dialog on crypto 4
 - improve ViewCertOutput and InfoClass dialogs
 

@@ -1,9 +1,8 @@
-#!/usr/bin/env xdg-open
-
 [Desktop Entry]
 Encoding=UTF-8
 Name=Token Manager
 Name[ru]=Ключевые носители и сертификаты
+Comment=Install Delayed Media Certificates
 Comment[ru]=Установить сертификаты с ключевых носителей
 Exec=token-manager
 Terminal=false
@@ -11,4 +10,4 @@ Type=Application
 Icon=token-manager
 StartupNotify=true
 X-Desktop-File-Install-Version=0.15
-Categories=HardwareSettings;Settings;System;
+Categories=System;

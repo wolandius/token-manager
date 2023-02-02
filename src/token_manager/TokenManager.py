@@ -52,9 +52,10 @@ from datetime import datetime
 
 from pathlib import Path
 
-VERSION = "4.1"
+VERSION = "4.2"
 
 GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
+appdir = os.popen("echo $APPDIR").readline().strip()
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help":
@@ -496,7 +497,9 @@ def get_cspversion():
 
 
 def check_user_pin():
-    pkcs15tool = subprocess.Popen(['/usr/bin/pkcs15-tool', '-D'], stdout=subprocess.PIPE)
+    global appdir
+    pkcs15tool = subprocess.Popen([f'{appdir}/usr/bin/pkcs15-tool', '-D'], stdout=subprocess.PIPE) if appdir else \
+        subprocess.Popen(['/usr/bin/pkcs15-tool', '-D'], stdout=subprocess.PIPE)
     output = pkcs15tool.communicate()[0].decode("utf-8")
     search = 'User PIN'
     s = re.search(search, output)
@@ -582,7 +585,10 @@ def export_cert(container, path):
     return output
 
 def set_license(cpro_license):
-    cpconfig = subprocess.Popen(['/usr/bin/cpconfig-%s' % arch, '-license', '-set', cpro_license],
+    global appdir
+    cpconfig = subprocess.Popen([f'{appdir}/usr/bin/cpconfig-%s' % arch, '-license', '-set', cpro_license],
+                                stdout=subprocess.PIPE) if appdir else \
+        subprocess.Popen(['/usr/bin/cpconfig-%s' % arch, '-license', '-set', cpro_license],
                                 stdout=subprocess.PIPE)
     output = cpconfig.communicate()[0]
     if cpconfig.returncode:
@@ -2445,7 +2451,8 @@ class TokenUI(Gtk.Box):
         # Проверка на наличие домена, если он есть, то включаем правило для secretnet
         # правило единое для всех доменных пользователей
         ###
-        domain_info = os.popen("realm list").readlines()
+        global appdir
+        domain_info = os.popen(f"{appdir}/usr/sbin/realm list").readlines() if appdir else os.popen("/usr/sbin/realm list").readlines()
         if domain_info:
             status = self.info_class.call_secretnet_configs("доменных пользователей", "domain")
             if status == "installed":
@@ -2682,7 +2689,9 @@ class TokenUI(Gtk.Box):
                 self.tokens_for_import_container.append([token, False])
 
     def get_token_serial(self, token):
-        opensc_tool = subprocess.Popen(['/usr/bin/opensc-tool', '--serial', '-r', token], stdout=subprocess.PIPE)
+        global appdir
+        opensc_tool = subprocess.Popen([f'{appdir}/usr/bin/opensc-tool', '--serial', '-r', token], stdout=subprocess.PIPE) if appdir else \
+            subprocess.Popen(['/usr/bin/opensc-tool', '--serial', '-r', token], stdout=subprocess.PIPE)
         output = opensc_tool.communicate()[0]
         try:
             serial = str(int(''.join(output.decode('utf-8').split(' ')[:-1]), 16))
@@ -2705,8 +2714,11 @@ class TokenUI(Gtk.Box):
             self.info_class.print_simple_info("Произошла ошибка")
 
     def set_as_reader(self, token):
-        cpconfig = subprocess.Popen(['/usr/bin/cpconfig-%s' % arch, '-hardware', 'reader', '-add', f"{token}"],
-                                    stdout=subprocess.PIPE)
+        global appdir
+        cpconfig = subprocess.Popen([f'{appdir}/usr/bin/cpconfig-%s' % arch, '-hardware', 'reader', '-add', f"{token}"],
+                                    stdout=subprocess.PIPE) if appdir else \
+        subprocess.Popen(['/usr/bin/cpconfig-%s' % arch, '-hardware', 'reader', '-add', f"{token}"],
+                         stdout=subprocess.PIPE)
         output = cpconfig.communicate()[0].decode('utf-8')
         if "Succeeded, code:0x0" in output:
             return True
@@ -2760,9 +2772,13 @@ class About(Gtk.Window):
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_skip_taskbar_hint(True)
         self.set_resizable(False)
+        global appdir
         pixbuf = GdkPixbuf.Pixbuf.new_from_file(
+            filename=f"{appdir}/usr/share/icons/hicolor/64x64/apps/token-manager.png"
+            ) if appdir else GdkPixbuf.Pixbuf.new_from_file(
             filename="/usr/share/icons/hicolor/64x64/apps/token-manager.png"
             )
+
 
         self.image = Gtk.Image.new_from_pixbuf(pixbuf)
         self.box.pack_start(self.image, False, False, 0)
@@ -3177,15 +3193,11 @@ class InfoClass(Gtk.Window):
         cpro_license = userEntry.get_text()
         dialogWindow.destroy()
         if (response == Gtk.ResponseType.OK) and (cpro_license != ''):
-            m = re.match('([A-Z0-9]{5}-){4}[A-Z0-9]{5}', cpro_license)
-            if m:
-                l = set_license(cpro_license)
-                if l[1]:
-                    self.print_error(f'Произошла ошибка: {l[0]}')
-                else:
-                    self.print_simple_info('Лицензионный ключ успешно установлен')
+            l = set_license(cpro_license)
+            if l[1]:
+                self.print_error(f'Произошла ошибка: {l[0]}')
             else:
-                self.print_error('Лицензионный ключ введен неверно!')
+                self.print_simple_info('Лицензионный ключ успешно установлен')
 
     def enter_container_name(self, widget, old_name):
         dialogWindow = Gtk.MessageDialog(parent=self,

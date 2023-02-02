@@ -3,7 +3,7 @@
 #
 
 Name:           token-manager
-Version:        4.1
+Version:        4.2
 Release:        1%{dist}.3
 
 BuildArch:      noarch
@@ -16,14 +16,17 @@ Url:            https://github.com/wolandius/token-manager
 
 Source0:        %{name}-%{version}.tar.gz
 
-Buildrequires:  python3
+Buildrequires:  python3-devel
 Buildrequires:  python3-setuptools
 
 Requires:       opensc
 Requires:       python3-chardet
 Requires:       usermode
 Requires:       xdg-utils
-
+Requires:       realmd
+Requires:       procps-ng
+Requires:       wget
+Requires:       polkit
 
 %description
 A GTK front-end for Crypto Pro CSP for RED OS and GosLinux.
@@ -66,6 +69,7 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %doc README.md Changelog
 %{_bindir}/cpconfig-amd64
 %exclude %{_datadir}/applications/%{name}-ia32.desktop
+%exclude  %{_sysconfdir}/pam.d/cpconfig-ia32
 %exclude  /usr/lib/python3*/site-packages/token_manager/*/*.pyc
 
 %files ia32
@@ -74,7 +78,11 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
-* Thu Jan 17 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.1-1
+* Thu Feb 02 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.2-1
+- added compitibility with appimage format
+- fix in set_license function
+
+* Tue Jan 17 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.1-1
 - hide ask_about_mmy dialog on crypto 4
 - improve ViewCertOutput and InfoClass dialogs
 

@@ -9,7 +9,7 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
     name='token_manager',
-    version="4.1",
+    version="4.2",
     description="Certificate manager for CryptoPro CSP",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -32,9 +32,8 @@ setup(
     python_requires=">=3.6, <4",
     install_requires=["PyGObject"],
     data_files=[
-                    ("/etc/pam.d/", ["data/cpconfig-amd64"]),
-                    ("/etc/pam.d/", ["data/cpconfig-ia32"]),
-                    ("/etc/security/console.apps/", ["data/cpconfig-pam"]),
+                    ("/etc/pam.d/", ["data/pam.d/cpconfig-amd64", "data/pam.d/cpconfig-ia32"]),
+                    ("/etc/security/console.apps/", ["data/cpconfig-amd64", "data/cpconfig-ia32"]),
                     ("share/polkit-1/actions/", ["data/org.freedesktop.policykit.pkexec.policy"]),
                     ("share/applications/", ["data/token-manager.desktop"]),
                     ("share/applications/", ["data/token-manager-ia32.desktop"]),
