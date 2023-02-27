@@ -3,7 +3,7 @@
 #
 
 Name:           token-manager
-Version:        4.1
+Version:        4.2
 Release:        1%{dist}.2
 
 BuildArch:      noarch
