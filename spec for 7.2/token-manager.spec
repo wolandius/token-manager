@@ -17,13 +17,17 @@ Url:            https://github.com/wolandius/token-manager
 Source0:        %{name}-%{version}.tar.gz
 
 Buildrequires:  python3
+Buildrequires:  python3-devel
 Buildrequires:  python3-setuptools
 
 Requires:       opensc
 Requires:       python3-chardet
 Requires:       usermode
 Requires:       xdg-utils
-
+Requires:       realmd
+Requires:       procps-ng
+Requires:       wget
+Requires:       polkit
 
 %description
 A GTK front-end for Crypto Pro CSP for RED OS and GosLinux.

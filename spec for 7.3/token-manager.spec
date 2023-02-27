@@ -16,6 +16,7 @@ Url:            https://github.com/wolandius/token-manager
 
 Source0:        %{name}-%{version}.tar.gz
 
+Buildrequires:  python3
 Buildrequires:  python3-devel
 Buildrequires:  python3-setuptools
 
