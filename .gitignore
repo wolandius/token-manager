@@ -3,5 +3,5 @@ rpmbuild.sh
 test.py
 .idea
 *.tar.gz
-#appimage/*
+appimage/*
 src/*egg*
