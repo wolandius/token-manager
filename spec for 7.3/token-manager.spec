@@ -3,7 +3,7 @@
 #
 
 Name:           token-manager
-Version:        4.2
+Version:        5.0
 Release:        1%{dist}.3
 
 BuildArch:      noarch
@@ -62,6 +62,16 @@ python3 setup.py install --single-version-externally-managed --root=$RPM_BUILD_R
 %post
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}.desktop
 
+
+%posttrans
+VERSION=%{version}
+for f in /usr/lib/python3*/site-packages/token_manager*egg*;
+do
+  if [ -d "$f" ] && [ "$f" != "/usr/lib/python3"*"/site-packages/token_manager-$VERSION"* ]; then
+    rm -rf $f ;
+  fi;
+done
+
 %post ia32
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.desktop
 
@@ -79,6 +89,12 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Fri Mar 31 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:5.0-1
+- added UI files
+- added translate files
+- added ask_about_extras dialog
+- fix rules error with extra certs wget
+
 * Thu Feb 02 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.2-1
 - added compitibility with appimage format
 - fix in set_license function

@@ -1,3 +1,13 @@
+v5.0 Mar 31 2023
+- added UI files
+- added translate files
+- added ask_about_extras dialog
+- fix rules error with extra certs wget
+
+v4.2 Feb 02 2023
+- added compitibility with appimage format
+- fix in set_license function
+
 v4.1 Jan 17 2023
 - hide ask_about_mmy dialog on crypto 4
 - improve ViewCertOutput and InfoClass dialogs

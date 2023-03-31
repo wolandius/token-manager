@@ -1,11 +1,10 @@
 [Desktop Entry]
-Encoding=UTF-8
 Name=Token Manager
 Name[ru]=Ключевые носители и сертификаты
 Comment=Install Delayed Media Certificates
 Comment[ru]=Установить сертификаты с ключевых носителей
-Exec=token-manager
 Terminal=false
+Exec=token-manager
 Type=Application
 Icon=token-manager
 StartupNotify=true

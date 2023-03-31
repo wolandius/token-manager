@@ -9,7 +9,7 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
     name='token_manager',
-    version="4.2",
+    version="5.0",
     description="Certificate manager for CryptoPro CSP",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -34,7 +34,13 @@ setup(
     data_files=[
                     ("/etc/pam.d/", ["data/pam.d/cpconfig-amd64", "data/pam.d/cpconfig-ia32"]),
                     ("/etc/security/console.apps/", ["data/cpconfig-amd64", "data/cpconfig-ia32"]),
-                    ("share/polkit-1/actions/", ["data/org.freedesktop.policykit.pkexec.policy"]),
+                    ("share/polkit-1/actions/", ["data/ru.red-soft.token-manager.policy"]),
+                    ("share/token_manager/ui/", ["data/ui/style.css",
+                                                 "data/ui/templates.glade",
+                                                 "data/ui/token_manager.glade"
+                                                 ]),
+                    ("share/locale/en_US/LC_MESSAGES/", ["data/locale/en_US/LC_MESSAGES/token_manager.mo"]),
+                    ("share/locale/ru/LC_MESSAGES/",    ["data/locale/ru/LC_MESSAGES/token_manager.mo"]),
                     ("share/applications/", ["data/token-manager.desktop"]),
                     ("share/applications/", ["data/token-manager-ia32.desktop"]),
                     ("share/icons/hicolor/16x16/apps/",   ["pics/16x16/token-manager.png"]),

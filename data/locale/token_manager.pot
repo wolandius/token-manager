@@ -1,0 +1,654 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-03-31 11:17+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1470
+msgid "CIPF Crypto Pro CSP or some of its components are not installed for"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1474
+msgid "The current version of CIPF Crypto Pro CSP is not supported."
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1517
+msgid "Select key media or vault"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1541
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1581
+msgid "Select certificate container"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1605
+msgid "Select certificate"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1626
+msgid "issued"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1627
+msgid "organization"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1658
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2046
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2135
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3054
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3112
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3597
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3652
+msgid "Selected"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1659
+msgid ""
+"container(s),\n"
+"please select only 1"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1673
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1682
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1687
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1937
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1940
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1946
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1958
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1965
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2002
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2005
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2017
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2023
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2082
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2085
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2088
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2094
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2103
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2174
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2177
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2180
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2189
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2210
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2215
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2313
+msgid "Operation canceled by user"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1679
+msgid "The certificate was successfully copied to the container"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1690
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1693
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1943
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2097
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2100
+msgid "Tokens not found"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1702
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1716
+msgid "Certificate removed successfully"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1780
+msgid "<b>Issuer</b>"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1789
+msgid "<b>Subject</b>:"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1807
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2566
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2905
+msgid "Serial number"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1811
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2906
+msgid "Not valid until"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1818
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2907
+msgid "Not valid after"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1821
+msgid "<b>Advanced key usage</b>: "
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1832
+msgid "<i>Does not have</i>"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1839
+msgid "<b>Required Root Certificates</b>: "
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1848
+msgid "<b>Required CRLs</b>: "
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1855
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:29
+msgid "View"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1856
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2929
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2986
+msgid "Certificate"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1860
+msgid "The public part of the certificate was not found"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1887
+msgid "View CryptoPRO CSP license"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1888
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:20
+msgid "License"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1915
+msgid "<key carriers not found>"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1928
+msgid ""
+"You must select 1 storage\n"
+"to complete the export"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1949
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2008
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2091
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2183
+msgid "Name not entered"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1952
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2011
+msgid "Please choose only 1 container"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1955
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2014
+msgid "No containers selected"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1961
+msgid "No storage found in hdimage"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:1997
+msgid "Certificate successfully exported"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2020
+msgid "Vaults not found"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2047
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2136
+msgid ""
+"container(s),\n"
+"prepare to enter passwords for containers\n"
+"several times and select certificates\n"
+"of the public part of the key\n"
+"(if they are not installed automatically"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2073
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2165
+msgid ""
+"You need to select 1 storage\n"
+"to complete the export"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2186
+msgid "Wrong path selected, operation canceled"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2192
+msgid "No containers found related to the usb-flash drive"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2207
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2310
+msgid ""
+"Reconnect the usb-flash drive\n"
+"and repeat the operation"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2227
+msgid "domain users"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2272
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2358
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2786
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3187
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3310
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3388
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3479
+msgid "Successfully installed root certificates:"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2280
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2364
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2792
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3193
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3316
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3394
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3487
+msgid "Successfully installed CRLs:"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2288
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2370
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2798
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3199
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3322
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3400
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3492
+msgid "Error installing root certificates:"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2294
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2376
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2804
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3207
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3328
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3406
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3500
+msgid "Error installing CRLs:"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2385
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3216
+msgid "Certificate installed successfully"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2409
+msgid "Root certificates"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2415
+msgid "CRLs"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2430
+msgid "Root certificates storage"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2438
+msgid "Personal certificates storage"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2446
+msgid "<No Key Carriers Found>"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2452
+msgid "serial"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2495
+msgid "PIN code changed successfully"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2502
+msgid "PIN code saved successfully"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2543
+msgid "Type to filter..."
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2549
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2903
+msgid "Issuer"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2551
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2580
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2904
+msgid "Subject"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2553
+msgid "Basic information"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2567
+msgid "Not available until"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2568
+msgid "Not available after"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2570
+msgid "SHA1 fingerprint"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2575
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2919
+msgid "SHA1 hash"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2582
+msgid "Dates"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2597
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2981
+msgid "Date of issue"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2598
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2982
+msgid "Update date"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2731
+msgid "Choose file(s)"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2738
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3427
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3525
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:21
+msgid "Certificates"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2830
+msgid "An error has occurred"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2833
+msgid "License key successfully installed"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2911
+msgid "SHA1 Fingerprint"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2928
+msgid "Root certificate installed"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:2985
+msgid "CRLs installed"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3049
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3591
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3647
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:22
+msgid "Containers"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3106
+msgid "Vaults"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3126
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3224
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3420
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3518
+msgid "Select user certificate"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3265
+msgid ""
+"You need to select 1 container\n"
+"to set up binding"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3337
+msgid "The certificate was successfully associated with the container."
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3415
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3509
+msgid ""
+"Container successfully copied\n"
+"and associated with the certificate."
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3557
+msgid "Select directory"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py:3618
+msgid "Configure udev rule for "
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:1
+msgid ""
+"Copyright (c) 2017 Boris Makarenko\n"
+"Copyright (c) 2020-2023 Vladlen Murylev\n"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:4
+msgid "Github"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:5
+msgid "Install root certificates"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:6
+msgid "Install CRLs"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:7
+msgid "Write a certificate to a container"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:8
+msgid "Export certificate from container"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:9
+msgid "Associate a certificate with a container"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:10
+msgid "View Root Certificates"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:11
+msgid "View CRLs"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:12
+msgid "Copy container from token"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:13
+msgid "Copy container from usb flash drive"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:14
+msgid "Copy container from HDIMAGE to token"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:15
+msgid "Enter CryptoPRO license"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:16
+msgid "View CryptoPRO license"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:17
+msgid "Install CryptoPRO CSP"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:18
+msgid "Work with CryptoPRO CSP certificates"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:19
+msgid "Key media and certificates"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:23
+msgid "Useful links"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:24
+msgid "About"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:25
+msgid "Update"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:26
+msgid "Save PIN"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:27
+msgid "Change PIN"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:28
+msgid "Delete"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/token_manager.glade.h:30
+msgid "Install"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:1
+msgid "Confirmation"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:2
+msgid "The certificate has been successfully installed."
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:3
+msgid "Would you like to install the required additional certificates?"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:4
+msgid "Question"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:5
+msgid ""
+"Install certificate(s) for local user (uMy storage) or all at once (mMy "
+"storage)?"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:6
+msgid "Local"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:7
+msgid "For all"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:8
+msgid ""
+"Install certificate(s) for local user or for all at once? (mRoot storage)"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:9
+msgid "Type PIN-code"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:10
+msgid ""
+"Enter the password of the root user, after applying\n"
+"you will need to reconnect the usb-flash drive"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:12
+msgid "Select 1 storage to export container"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:13
+msgid "Select file(s)"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:14
+msgid ""
+"Are you sure you want to remove this certificate from the key carrier? This "
+"operation cannot be undone."
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:15
+msgid ""
+"Are you sure you want to delete this certificate? This operation cannot be "
+"undone."
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:16
+msgid "Type new certificate's name"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:17
+msgid "Type new container's name"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:18
+msgid "Enter your CryptoPRO license key"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:19
+msgid "Creating an HDIMAGE storage"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:20
+msgid "Enter the password of the root user"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:21
+msgid "Select container from usb-flash"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:22
+msgid "Select container from hdimage"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:23
+msgid "Select container from token"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:24
+msgid "Error"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:25
+msgid "Information"
+msgstr ""
+
+#: /home/wolandius/git_projects/token-manager/data/ui/templates.glade.h:26
+msgid "Select container"
+msgstr ""

@@ -41,6 +41,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
+import gettext
 import os, gi, re, subprocess, platform, sys, webbrowser
 import time
 
@@ -52,10 +53,20 @@ from datetime import datetime
 
 from pathlib import Path
 
-VERSION = "4.2"
+VERSION = "5.0"
 
 GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
 appdir = os.popen("echo $APPDIR").readline().strip()
+
+
+t = gettext.translation('token_manager', f"{appdir}/usr/share/locale/") if appdir else gettext.translation('token_manager', "/usr/share/locale/")
+# t = gettext.translation('token_manager', "../../data/locale/")
+t.install()
+_ = t.gettext
+
+builder = Gtk.Builder()
+# builder.add_from_file('../../data/ui/token_manager.glade')
+builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/token_manager.glade') if appdir else builder.add_from_file('/usr/share/token_manager/ui/token_manager.glade')
 
 if len(sys.argv) > 1:
     if sys.argv[1] == "--help":
@@ -65,7 +76,7 @@ if len(sys.argv) > 1:
     --ia32          вызов 32-битной версии КриптоПро;
     --aarch64       вызов aarch64 версии КриптоПро;
     --e2k64         вызов e2k64 версии КриптоПро;
-    --version       вывод номера версии token-manager; 
+    --version       вывод номера версии token-manager;
     --debug-output  пробный вызов основных функций утилиты;
     --debug-output --amd64 пробный вызов основных функций утилиты для архитектуры amd64;
     --debug-output --ia32 пробный вызов основных функций утилиты для архитектуры ia32;
@@ -143,7 +154,6 @@ else:
         arch = 'e2k64'
     else:
         exit(-1)
-
 
 class Debug:
     def __init__(self):
@@ -224,206 +234,12 @@ class Debug:
         os.system(
             f"""echo -e "\e[1;31mДанная информация не передается третьим лицам и используется исключительно для решения технических проблем.\033[0m" """)
 
-
-path = os.path.abspath(__file__)
-global_import = re.sub("/modules/administration/token-manager-gtk.py", "", path)
-path = global_import + "/icons/"
-root_png = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x14\x02\x01\x03\xd2\x03\x01\x04\xfe\x03\x01\x04\xff\x03\x01' \
-           b'\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff' \
-           b'\x03\x01\x04\xff\x03\x01\x04\xf8\x03\x01\x03\x8e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02Z\x02\x01\x04\xba\x00\x00\x00\x01\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x18\x03\x01\x04\xfb\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02_\x02\x01\x04\xab\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x03\x01\x04\xff\x00\x00\x00\x02\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02_\x02\x01\x04\xab' \
-           b'\x00\x00\x00\x00\x03\x01\x03\x89\x03\x01\x04\xaa\x03\x01\x04\xaa\x03\x01\x04\xaa\x03\x01\x04\xaa\x03' \
-           b'\x01\x04\xaa\x03\x01\x04\xaa\x03\x01\x04\xaa\x03\x00\x03G\x00\x00\x00\x08\x03\x01\x04\xff\x00\x00\x00' \
-           b'\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02_\x02' \
-           b'\x01\x04\xab\x00\x00\x00\x00\x04\x00\x045\x03\x00\x03D\x03\x00\x03D\x03\x00\x03D\x03\x00\x03D\x03\x00' \
-           b'\x03D\x03\x00\x03D\x03\x00\x03D\x00\x00\x00\x1a\x00\x00\x00\x08\x03\x01\x04\xff\x00\x00\x00\x01\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02_\x02\x01\x04' \
-           b'\xab\x00\x00\x00\x00\x00\x00\x00\x1d\x05\x00\x053\x05\x00\x053\x05\x00\x053\x05\x00\x053\x05\x00\x053' \
-           b'\x05\x00\x053\x05\x00\x053\x00\x00\x00\t\x00\x00\x00\x08\x03\x01\x04\xff\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02_\x02\x01\x04\xab\x00' \
-           b'\x00\x00\x00\x02\x01\x04\xab\x02\x01\x03\xcc\x02\x01\x03\xcc\x02\x01\x03\xcc\x02\x01\x03\xcc\x02\x01' \
-           b'\x03\xcc\x02\x01\x03\xcc\x02\x01\x03\xcc\x02\x00\x02\\\x00\x00\x00\x08\x03\x01\x04\xff\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02_\x02\x01' \
-           b'\x04\xab\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x03\x01\x04\xff' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02' \
-           b'\x00\x02_\x02\x01\x04\xab\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07#\x03\x00\x03E\x00\x00\x00\x00\x00\x00\x00\x05\x03\x01' \
-           b'\x03\xdd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x02\x00\x02_\x02\x01\x04\xab\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x03\x00\x03\x80\x03\x01\x03\x8d\x03\x01\x03\xd8\x03\x01\x04\xe5\x03\x01\x03\x96\x03\x01\x03' \
-           b'\x97\x00\x00\x00.\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x02\x00\x02_\x02\x01\x04\xab\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x0e\x03\x01\x04\xe7\x02\x00\x04h\x03\x01\x03\x8e\x03\x01\x03\x9c\x02\x00\x05f\x02\x01' \
-           b'\x03\xc7\x02\x00\x02Y\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x02\x00\x02_\x02\x01\x04\xab\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x06(\x02\x01\x03\xc7\x04\x00\x04g\x03\x01\x04\xf6\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x02' \
-           b'\x00\x04{\x03\x01\x03\xd6\x02\x00\x02V\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x02\x00\x02_\x02\x01\x04\xab\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00' \
-           b'\x03K\x03\x01\x03\xdb\x03\x01\x04\xa4\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff' \
-           b'\x03\x01\x04\xed\x03\x01\x03\x92\x03\x01\x03\x96\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02_\x02\x01\x04\xab\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\n\x02\x01\x03\xc1\x02\x01\x04\xbd\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03' \
-           b'\x01\x04\xff\x03\x01\x04\xfd\x02\x00\x04|\x03\x00\x03U\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x02_\x02\x01\x04\xab\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x02\x00\x05`\x03\x01\x04\xef\x02\x00\x04\x7f\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff' \
-           b'\x03\x01\x04\xff\x02\x01\x03\xc3\x02\x01\x04\xaf\x03\x01\x04\xaa\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x03S\x02\x01\x03\xcd\x03\x00\x03U\x03\x00\x03U\x03' \
-           b'\x00\x03U\x00\x00\x05-\x03\x01\x03\x98\x03\x01\x03\x9b\x03\x01\x04\xa6\x03\x01\x04\xff\x03\x01\x04\xff' \
-           b'\x02\x01\x03\xd0\x02\x00\x04k\x02\x01\x03\xc1\x00\x00\x07$\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07\x03\x01\x03\x96\x02\x01\x04\xbb\x02\x01\x04\xbb' \
-           b'\x02\x01\x04\xbb\x02\x00\x04i\x05\x00\x051\x03\x01\x04\xf8\x02\x01\x03\xc4\x02\x00\x04z\x02\x00\x06x' \
-           b'\x03\x01\x04\xa1\x03\x01\x04\xfe\x02\x00\x05d\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x02\x00\x04t\x03\x01\x04\xef\x03\x00\x03\x81\x04\x00\x04\x7f\x02\x01\x04\xbc\x03' \
-           b'\x01\x04\xe8\x04\x00\x04w\x03\x00\x03\x85\x02\x01\x03\xc0\x02\x01\x04\xb6\x00\x00\x00\x08\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x02\x03\x01\x03\x9e\x03\x01\x04\xf1\x03\x01\x04\xfa\x03\x00\x03T\x00\x00' \
-           b'\x00\x07\x00\x00\x00\x15\x00\x00\x07#\x03\x01\x04\xe1\x03\x01\x04\xff\x02\x01\x04\xb4\x00\x00\x06*\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x01\x03\x9c\x03\x00\x03R\x00\x00\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07!\x02\x01\x03\xcb\x00\x00\x00\x02\x00\x00' \
-           b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-
-personal_png = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00Y\x00\x00\x00\xcd\x00\x00\x00\xee\x00\x00\x00\xee\x00\x00\x00\xcc\x00\x00\x00W' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00N\x00\x00\x00\xfe\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00' \
-               b'\xff\x00\x00\x00\xfe\x00\x00\x00L\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xc0\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff' \
-               b'\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xbe\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xed\x00\x00\x00\xff\x00\x00\x00' \
-               b'\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xeb\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\xfd\x00\x00' \
-               b'\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00' \
-               b'\xfc\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00' \
-               b'\x00\x00\xf9\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00' \
-               b'\x00\xff\x00\x00\x00\xf8\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\xc8\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00' \
-               b'\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xc5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00c\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff' \
-               b'\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00_\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\xb1\x00\x00\x00' \
-               b'\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xae\x00\x00\x00\x01\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x03\x00\x00\x00c\x00\x00\x00\xb7\x00\x00\x00\xb7\x00\x00\x00a\x00\x00\x00\x02\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00C\x00\x00\x00' \
-               b'\x8e\x00\x00\x00\xbe\x00\x00\x00[\x00\x00\x00\t\x00\x00\x00\t\x00\x00\x00]\x00\x00\x00\xbf\x00\x00' \
-               b'\x00\x8e\x00\x00\x00D\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00!\x00\x00\x00\xce\x00\x00\x00\xff' \
-               b'\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00' \
-               b'\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xcf\x00\x00\x00\x1f\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\xd1\x00\x00\x00' \
-               b'\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff' \
-               b'\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xcc\x00' \
-               b'\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00;\x00\x00\x00' \
-               b'\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff' \
-               b'\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00' \
-               b'\x00\x00\xff\x00\x00\x007\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00i\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00' \
-               b'\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff' \
-               b'\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00h\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00~\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00' \
-               b'\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00' \
-               b'\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00{\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x90\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00' \
-               b'\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00' \
-               b'\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\x8e\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x95\x00\x00\x00\xff\x00\x00\x00\xff\x00' \
-               b'\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00' \
-               b'\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00' \
-               b'\x94\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x14\x00\x00\x00\xb3' \
-               b'\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00' \
-               b'\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xff\x00\x00' \
-               b'\x00\xb1\x00\x00\x00\x13\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-               b'\x00\x00\x00\x00\x00\x00\x00\x002\x00\x00\x00~\x00\x00\x00\xb2\x00\x00\x00\xda\x00\x00\x00\xf0\x00' \
-               b'\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\xf0\x00\x00\x00\xda\x00\x00\x00\xb2\x00\x00\x00}\x00\x00' \
-               b'\x001\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-
-usb_token_png = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x0c\x02\x01\x04\xb0\x05\x00\x053\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0c\x02\x01\x03\xc1\x03\x01\x03\x82\x03\x01\x03\xd7\x05' \
-                b'\x00\x053\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\r\x02\x01\x03\xc2\x02\x00\x04x\x03\x01\x03\x96' \
-                b'\x04\x00\x048\x03\x01\x03\xd8\x05\x00\x053\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\r\x02\x01\x03\xc2\x02\x00\x05f\x00\x00\x06*' \
-                b'\x03\x01\x04\xeb\x03\x01\x03\x82\x05\x00\x05-\x03\x01\x03\xda\x05\x00\x053\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x06(\x02\x01\x03\xc4\x02\x00\x04g\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x06(\x00\x00\x06*\x03\x01\x04\xa3\x04\x00\x04:\x03\x01\x03\xdb\x05' \
-                b'\x00\x053\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1c\x02\x01\x03\xc7\x03\x01\x04\xff\x03\x01\x04\xff\x02\x01' \
-                b'\x03\xc0\x00\x00\x00\x1a\x00\x00\x00\x00\x00\x00\x00\x00\x05\x00\x05/\x03\x01\x04\xeb\x02\x00\x05b' \
-                b'\x03\x01\x03\x9c\x03\x01\x04\xa4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1d\x03\x01\x03\xdc\x03\x01\x04\xff\x03\x01\x04\xff' \
-                b'\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x03\xd9\x00\x00\x00\x1b\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x17\x03\x01\x03\x87\x02\x01\x04\xb2\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1e\x03\x01\x03\xdd\x03\x01\x04\xff' \
-                b'\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x03\xdb' \
-                b'\x00\x00\x00\x1c\x00\x00\x00\x00\x03\x01\x03\x88\x02\x01\x04\xb1\x00\x00\x00\x06\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1e\x03\x01\x03\xdd' \
-                b'\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff' \
-                b'\x03\x01\x04\xff\x03\x01\x04\xff\x02\x01\x03\xc7\x03\x01\x03\x8b\x02\x01\x04\xaf\x00\x00\x00\x06' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1f' \
-                b'\x03\x01\x03\xde\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff' \
-                b'\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x02\x01\x04\xae' \
-                b'\x00\x00\x00\x05\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x07$\x03\x01\x04\xe3\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03' \
-                b'\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03' \
-                b'\x01\x04\xff\x05\x00\x052\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00 \x03\x01\x03\xdf\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04' \
-                b'\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04' \
-                b'\xff\x03\x01\x04\xff\x03\x01\x03\xd5\x00\x00\x00\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x18\x03\x01\x04\xe0\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04' \
-                b'\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04' \
-                b'\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xea\x05\x00\x05-\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x01\x04\xa3\x03\x01\x04\xff\x03\x01\x04\xff' \
-                b'\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff' \
-                b'\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xea\x05\x00\x05-\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x01\x04\xe1\x03' \
-                b'\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03' \
-                b'\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xea\x05\x00\x05-\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x02\x01\x03\xc3\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01' \
-                b'\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xe9\x05\x00' \
-                b'\x05,\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x03@\x03\x01\x04\xfc\x03\x01\x04\xff\x03\x01\x04\xff' \
-                b'\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xe9' \
-                b'\x05\x00\x05+\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x03K\x03\x01' \
-                b'\x04\xf8\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01' \
-                b'\x04\xe4\x00\x00\x06%\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x03\x00\x03J\x03\x01\x04\xf8\x03\x01\x04\xff\x03\x01\x04\xff\x03\x01\x04\xff' \
-                b'\x03\x01\x04\xe4\x00\x00\x06%\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\x00\x03@\x02\x01\x03\xcf\x03\x01' \
-                b'\x04\xf6\x02\x01\x04\xb5\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' \
-                b'\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-
-
+from token_manager import token_pngs
+# from . import token_pngs
+# import token_pngs
+root_png = token_pngs.root_png
+personal_png = token_pngs.personal_png
+usb_token_png = token_pngs.usb_token_png
 def return_png(picture):
     pictures = {'root': root_png,
                 'personal': personal_png,
@@ -1635,89 +1451,17 @@ elif len(sys.argv) > 2:
     --debug-output --e2k64 пробный вызов основных функций утилиты для архитектуры e2k64;""")
     exit(-1)
 
-
-class MainMenu(Gtk.MenuBar):
+class TokenUI:
     def __init__(self):
-        super(MainMenu, self).__init__()
+        self.window = builder.get_object("main_window")
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file(
+            filename=f"{appdir}/usr/share/icons/hicolor/64x64/apps/token-manager.png"
+        ) if appdir else GdkPixbuf.Pixbuf.new_from_file(
+            filename="/usr/share/icons/hicolor/64x64/apps/token-manager.png"
+        )
 
-        file_menu = Gtk.Menu()
-
-        file_item = Gtk.MenuItem(label="_Операции", use_underline=True)
-        file_item.set_submenu(file_menu)
-
-        file_menu_license = Gtk.Menu()
-        file_item_license = Gtk.MenuItem(label="_Лицензия", use_underline=True)
-        file_item_license.set_submenu(file_menu_license)
-        self.add_license = Gtk.MenuItem(label="_Ввод лицензии КриптоПро CSP", use_underline=True)
-        self.view_license = Gtk.MenuItem(label="_Просмотр лицензии КриптоПро CSP", use_underline=True)
-
-        file_menu_operations_certs = Gtk.Menu()
-        file_item_operations_certs = Gtk.MenuItem(label="_Сертификаты", use_underline=True)
-        file_item_operations_certs.set_submenu(file_menu_operations_certs)
-
-        self.install_root_certs = Gtk.MenuItem(label="_Установка корневых сертификатов", use_underline=True)
-        self.install_crl = Gtk.MenuItem(label="_Установка списков отозванных сертификатов", use_underline=True)
-        self.write_cert_to_cont = Gtk.MenuItem(label="_Запись сертификата в контейнер", use_underline=True)
-        self.export_cont_cert = Gtk.MenuItem(label="_Экспортировать сертификат из контейнера", use_underline=True)
-        self.choose_local_cert_for_cont = Gtk.MenuItem(label="Связать сертификат с контейнером", use_underline=True)
-
-        file_menu_operations_conts = Gtk.Menu()
-        file_item_operations_conts = Gtk.MenuItem(label="_Контейнеры", use_underline=True)
-        file_item_operations_conts.set_submenu(file_menu_operations_conts)
-
-        self.view_root = Gtk.MenuItem(label="_Просмотр корневых сертификатов", use_underline=True)
-        self.view_crl = Gtk.MenuItem(label="_Просмотр списков отозванных сертификатов", use_underline=True)
-        self.usb_flash_container = Gtk.MenuItem(label="_Скопировать контейнер с usb-flash накопителя",
-                                                use_underline=True)
-        self.token_container = Gtk.MenuItem(label="_Скопировать контейнер с токена", use_underline=True)
-        self.hdimage_container = Gtk.MenuItem(label="_Скопировать контейнер из HDIMAGE на токен", use_underline=True)
-
-        file_item.set_submenu(file_menu)
-        file_menu.append(file_item_license)
-        file_menu_license.append(self.add_license)
-        file_menu_license.append(self.view_license)
-        file_menu.append(Gtk.SeparatorMenuItem.new())
-
-        file_menu.append(file_item_operations_certs)
-        file_menu_operations_certs.append(self.install_root_certs)
-        file_menu_operations_certs.append(self.install_crl)
-        file_menu_operations_certs.append(self.write_cert_to_cont)
-        file_menu_operations_certs.append(self.export_cont_cert)
-        file_menu_operations_certs.append(self.choose_local_cert_for_cont)
-        file_menu_operations_certs.append(Gtk.SeparatorMenuItem.new())
-        file_menu_operations_certs.append(self.view_root)
-        file_menu_operations_certs.append(self.view_crl)
-        file_menu.append(Gtk.SeparatorMenuItem.new())
-
-        file_menu.append(file_item_operations_conts)
-        file_menu_operations_conts.append(self.token_container)
-        file_menu_operations_conts.append(self.usb_flash_container)
-        file_menu_operations_conts.append(self.hdimage_container)
-        self.append(file_item)
-
-        Usefull_menu = Gtk.Menu()
-        Usefull_menu_item = Gtk.MenuItem(label="_Полезные ссылки", use_underline=True)
-        Usefull_menu_item.set_submenu(Usefull_menu)
-        self.actionUsefull_install = Gtk.MenuItem(label="_Установка КриптоПро CSP", use_underline=True)
-        Usefull_menu.append(self.actionUsefull_install)
-        self.actionUsefull_commands = Gtk.MenuItem(label="_Работа с сертификатами КриптоПро CSP", use_underline=True)
-        Usefull_menu.append(self.actionUsefull_commands)
-        self.append(Usefull_menu_item)
-
-        About_menu = Gtk.Menu()
-        About_menu_item = Gtk.MenuItem(label="_О программе", use_underline=True)
-        About_menu_item.set_submenu(About_menu)
-        self.actionAbout = Gtk.MenuItem(label="_О программе", use_underline=True)
-        About_menu.append(self.actionAbout)
-        self.append(About_menu_item)
-
-
-class TokenUI(Gtk.Box):
-    def __init__(self, parent, isApp):
-        super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        self.__parent = parent
-        global modules_list
-        self.set_size_request(500, 388)
+        image = Gtk.Image.new_from_pixbuf(pixbuf)
+        self.window.set_icon(image.get_pixbuf())
 
         self.info_class = InfoClass()
         if not os.path.exists('/opt/cprocsp/bin/%s/certmgr' % arch) \
@@ -1725,68 +1469,55 @@ class TokenUI(Gtk.Box):
                 or not os.path.exists('/opt/cprocsp/bin/%s/list_pcsc' % arch) \
                 or not os.path.exists('/opt/cprocsp/bin/%s/csptest' % arch) \
                 or not os.path.exists('/opt/cprocsp/sbin/%s/cpconfig' % arch):
+            text = _("CIPF Crypto Pro CSP or some of its components are not installed for")
             self.info_class.print_simple_info(
-                f'СКЗИ Крипто Про CSP или некоторые его компоненты не установлены для {arch}.')
-            # raise Exception(f'СКЗИ Крипто Про CSP или некоторые его компоненты не установлены для {arch}.')
+                f'{text} {arch}.')
             exit(-1)
-
+        text = _("The current version of CIPF Crypto Pro CSP is not supported.")
         if versiontuple("4.0.0") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.0"):
             if versiontuple(get_cspversion()[2]) < versiontuple("4.0.9708"):
-                self.info_class.print_simple_info('Текущая версия СКЗИ Крипто Про CSP не поддерживается.')
-                # raise Exception('Текущая версия СКЗИ Крипто Про CSP не поддерживается.')
+
+                self.info_class.print_simple_info(text)
                 exit(-1)
         elif versiontuple(get_cspversion()[2]) > versiontuple("5.0.0"):
             if versiontuple(get_cspversion()[2]) < versiontuple("5.0.11455"):
-                self.info_class.print_simple_info('Текущая версия СКЗИ Крипто Про CSP не поддерживается.')
-                # raise Exception('Текущая версия СКЗИ Крипто Про CSP не поддерживается.')
+                self.info_class.print_simple_info(text)
                 exit(-1)
 
         if not os.popen("systemctl list-unit-files | grep enabled | grep pcscd").readlines():
             os.system("systemctl enable --now pcscd")
 
-        self.main_menu = MainMenu()
-        self.main_menu.add_license.connect("activate", self.info_class.enter_license)
-        self.main_menu.view_license.connect("activate", self.view_license)
-        self.main_menu.install_root_certs.connect("activate", self.info_class.open_root_certs)
-        self.main_menu.install_crl.connect("activate", self.info_class.open_crl)
-        self.main_menu.view_root.connect("activate", self.view_root)
-        self.main_menu.view_crl.connect("activate", self.view_crl)
-        self.main_menu.write_cert_to_cont.connect("activate", self.write_cert)
-        self.main_menu.export_cont_cert.connect("activate", self.export_container_cert)
-        self.main_menu.choose_local_cert_for_cont.connect("activate", self.info_class.install_local_cert_to_container)
-        self.main_menu.actionAbout.connect("activate", self.about_iterate_self)
-        self.main_menu.actionUsefull_install.connect("activate", self.usefull_install)
-        self.main_menu.actionUsefull_commands.connect("activate", self.usefull_commands)
-        self.main_menu.token_container.connect("activate", self.token_container_install)
-        self.main_menu.usb_flash_container.connect("activate", self.usb_flash_container_install)
-        self.main_menu.hdimage_container.connect("activate", self.hdimage_container_install)
+        builder.get_object("add_license").connect("clicked", self.info_class.enter_license)
+        builder.get_object("view_license").connect("clicked", self.view_license)
 
-        self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        self.set_border_width(3)
-        self.main_box.pack_start(self.main_menu, False, True, 0)
+        builder.get_object("install_root_certs").connect("clicked", self.info_class.open_root_certs)
+        builder.get_object("install_crl").connect("clicked", self.info_class.open_crl)
+        builder.get_object("write_cert_to_cont").connect("clicked", self.write_cert)
+        builder.get_object("export_cont_cert").connect("clicked", self.export_container_cert)
+        builder.get_object("choose_local_cert_for_cont").connect("clicked", self.info_class.install_local_cert_to_container)
+        builder.get_object("view_root").connect("clicked", self.view_root)
+        builder.get_object("view_crl").connect("clicked", self.view_crl)
 
-        # box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        # self.token_refresh.connect("clicked", self.refresh_token)
-        # box.pack_start(self.arch_label, False, False, 0)
-        # self.main_box.pack_start(box, False, False, 3)
+        builder.get_object("actionUsefull_install").connect("clicked", self.usefull_install)
+        builder.get_object("actionUsefull_commands").connect("clicked", self.usefull_commands)
 
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        self.token_refresh = Gtk.Button.new_with_label("Обновить")
+        builder.get_object("actionAbout").connect("clicked", self.about_window)
+
+        builder.get_object("token_container").connect("clicked", self.token_container_install)
+        builder.get_object("usb_flash_container").connect("clicked", self.usb_flash_container_install)
+        builder.get_object("hdimage_container").connect("clicked", self.hdimage_container_install)
+
+        self.token_refresh = builder.get_object("token_refresh")
         self.token_refresh.connect("clicked", self.refresh_token)
-        box.pack_end(self.token_refresh, True, True, 0)
-        self.main_box.pack_start(box, False, False, 0)
 
-        scroll_window = Gtk.ScrolledWindow()
-        box = Gtk.Frame()
-
-        scroll_window.add(box)
-        scroll_window.set_size_request(200, 150)
         self.token_list = Gtk.ListStore(str, str, str, bool)
-        self.treeview = Gtk.TreeView(model=self.token_list)
+        self.treeview = builder.get_object("token_treeview")
+        self.treeview.set_model(self.token_list)
         self.treeview.get_selection().connect("changed", self.select_token)
 
         px_renderer = Gtk.CellRendererPixbuf()
-        px_column = Gtk.TreeViewColumn('Выберите ключевой носитель или хранилище')
+        text = _("Select key media or vault")
+        px_column = Gtk.TreeViewColumn(text)
         px_column.pack_start(px_renderer, False)
         str_renderer = Gtk.CellRendererText()
         px_column.pack_start(str_renderer, False)
@@ -1795,68 +1526,56 @@ class TokenUI(Gtk.Box):
         px_column.set_cell_data_func(str_renderer, self.get_tree_cell_text)
         self.treeview.append_column(px_column)
 
-        box.add(self.treeview)
-        self.main_box.pack_start(scroll_window, True, True, 7)
-
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        # self.asReader = Gtk.Button.new_with_label("Подключить как считыватель")
-        # self.asReader.connect("clicked", self.set_reader)
-        # self.asReader.set_sensitive(False)
-        # box.pack_start(self.asReader, True, True, 0)
-
-        self.cachePIN = Gtk.Button.new_with_label("Сохранить PIN")
+        self.cachePIN = builder.get_object("cachePIN")
         self.cachePIN.set_sensitive(False)
         self.cachePIN.connect("clicked", self.cache_pin)
-        box.pack_start(self.cachePIN, True, True, 3)
 
-        self.changePIN = Gtk.Button.new_with_label("Изменить PIN")
+        self.changePIN = builder.get_object("changePIN")
         self.changePIN.set_sensitive(False)
         self.changePIN.connect("clicked", self.change_pin)
-        box.pack_start(self.changePIN, True, True, 3)
-        self.main_box.pack_start(box, False, False, 0)
-        scroll_window = Gtk.ScrolledWindow()
-        box = Gtk.Frame()
-
-        scroll_window.add(box)
-        scroll_window.set_size_request(200, 150)
-
 
         # NEW model structure = {cert_index: type str, cert_item:, SubjKeyID: type str, color: type Gdk.RGBA}
         self.cert_list = Gtk.ListStore(str, str, str, Gdk.RGBA)
-        # self.cert_list = Gtk.ListStore(str, str, Gdk.RGBA)
-        self.treeview_cert = Gtk.TreeView(model=self.cert_list)
+        self.treeview_cert = builder.get_object("treeview_cert")
+        self.treeview_cert.set_model(self.cert_list)
 
         cell = Gtk.CellRendererText()
-        self.treeview_cert_col = Gtk.TreeViewColumn("Выберите контейнер сертификата", cell, text=1, background_rgba=3)
+        text = _("Select certificate container")
+        self.treeview_cert_col = Gtk.TreeViewColumn(text, cell, text=1, background_rgba=3)
         self.treeview_cert.append_column(self.treeview_cert_col)
         self.treeview_cert.get_selection().connect("changed", self.select_cert)
 
-        box.add(self.treeview_cert)
-        self.main_box.pack_start(scroll_window, True, True, 7)
-
-        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        self.cert_delete = Gtk.Button.new_with_label("Удалить")
+        self.cert_delete = builder.get_object("cert_delete")
         self.cert_delete.set_sensitive(False)
         self.cert_delete.connect("clicked", self.delete_cert)
-        box.pack_start(self.cert_delete, True, True, 0)
 
-        self.cert_view = Gtk.Button.new_with_label("Просмотр")
+        self.cert_view = builder.get_object("cert_view")
         self.cert_view.set_sensitive(False)
 
-        box.pack_start(self.cert_view, True, True, 7)
         self.handler_id_install = ""
         self.handler_id_view_cert = ""
-        self.cert_install = Gtk.Button.new_with_label("Установить")
+        self.cert_install = builder.get_object("cert_install")
         self.cert_install.set_sensitive(False)
 
-        box.pack_start(self.cert_install, True,
-                       True, 0)
-        self.main_box.pack_start(box, False, False, 0)
-
         self.token_refresh.clicked()
-        self.pack_start(self.main_box, True, True, 0)
+        self.window.show_all()
 
     ############################################################################################
+    def about_window(self, widget):
+        temp_builder = Gtk.Builder()
+        temp_builder.add_from_file(
+            f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file(
+            '/usr/share/token_manager/ui/templates.glade')
+        about = temp_builder.get_object("about_prog_window")
+        pixbuf =  GdkPixbuf.Pixbuf.new_from_file(
+            filename=f"{appdir}/usr/share/icons/hicolor/128x128/apps/token-manager.png"
+        ) if appdir else GdkPixbuf.Pixbuf.new_from_file(
+            filename="/usr/share/icons/hicolor/128x128/apps/token-manager.png"
+        )
+        about.set_logo(pixbuf)
+        response = about.run()
+        about.destroy()
+
     def select_token(self, selection):
         (model, iter) = selection.get_selected()
         self.cert_list.clear()
@@ -1872,14 +1591,15 @@ class TokenUI(Gtk.Box):
                 if self.handler_id_install != "":
                     self.cert_install.disconnect(self.handler_id_install)
                 self.handler_id_install = self.cert_install.connect("clicked", self.install_cert)
-                self.treeview_cert_col.set_title('Выберите контейнер сертификата')
+                text = _("Select certificate container")
+                self.treeview_cert_col.set_title(text)
                 # self.asReader.set_sensitive(True)
                 self.token = temp[1]
                 certs = get_token_certs(str(self.token))[0]
                 counter = 0
                 for cert in certs:
                     cert_item = cert.split('|')[0].split('\\')[-1]
-                    self.cert_list.append([str(counter), cert_item, "", Gdk.RGBA(red=0, green=0, blue=0, alpha=0)])
+                    self.cert_list.append([str(counter), cert_item, "", Gdk.RGBA(red=0, green=0, blue=0, alpha=0.1)])
                     counter+=1
             if not self.isToken:  # not isToken?
                 self.cert_install.set_sensitive(True)
@@ -1895,13 +1615,14 @@ class TokenUI(Gtk.Box):
                 # self.asReader.set_sensitive(False)
                 self.changePIN.set_sensitive(False)
                 self.cachePIN.set_sensitive(False)
-                self.treeview_cert_col.set_title("Выберите сертификат")
+                text = _("Select certificate")
+                self.treeview_cert_col.set_title(text)
                 certs = get_store_certs(model.get_value(iter, 2))
                 for cert in certs:
                     self.cert_index = cert[0]
-                    color = Gdk.RGBA(red=0, green=0, blue=0, alpha=0)
+                    color = Gdk.RGBA(red=0, green=0, blue=0, alpha=1)
                     if datetime.strptime(cert[6], '%d/%m/%Y  %H:%M:%S ') < datetime.utcnow():
-                        color = Gdk.RGBA(red=252, green=133, blue=133, alpha=1)
+                        color = Gdk.RGBA(red=252, green=133, blue=133, alpha=0.1)
                     try:
                         cert_subject_cn = dict(re.findall(
                             '([A-Za-z0-9\.]+?)=([\xab\xbb\(\)\w \.\,0-9@\-\#\/\"\/\']+|\"(?:\\.|[^\"])*\")(?:, |$)',
@@ -1915,8 +1636,9 @@ class TokenUI(Gtk.Box):
                             '([A-Za-z0-9\.]+?)=([\xab\xbb\(\)\w \.\,0-9@\-\#\/\"\/\']+|\"(?:\\.|[^\"])*\")(?:, |$)',
                             cert[1], re.UNICODE))
                         cert_issuer_cn = cert_issuer_cn['CN'] if 'CN' in cert_issuer_cn else ""
-
-                        cert_item = "%s\nвыдан %s\nорганизация %s" % (cert_subject_cn, cert_issuer_cn, cert_subject_o)
+                        text1 = _("issued")
+                        text2 = _("organization")
+                        cert_item = "%s\n%s %s\n%s %s" % (cert_subject_cn, text1, cert_issuer_cn, text2, cert_subject_o)
 
                         cert_ID = cert[5]
 
@@ -1927,6 +1649,7 @@ class TokenUI(Gtk.Box):
 
     def write_cert(self, widget):
         win = InfoClass()
+
         containers = Gtk.ListStore(str, bool)
         if hasattr(self, 'tokens_for_import_container'):
             for token in self.tokens_for_import_container:
@@ -1945,8 +1668,9 @@ class TokenUI(Gtk.Box):
                             selected += 1
 
                     if selected > 1:
-                        win.print_simple_info(f"Выбрано {selected} контейнера(ов),\n"
-                                              "пожалуйста выберите лишь 1")
+                        text1 = _("Selected")
+                        text2 = _("container(s),\nplease select only 1")
+                        win.print_simple_info(f"{text1} {selected} {text2}")
                     elif selected == 1:
                         for cont in selected_containers:
                             if cont[1]:
@@ -1959,22 +1683,28 @@ class TokenUI(Gtk.Box):
                                 output = win.install_new_cert_to_container(container)
                                 flag_success = False
                                 flag_cancel = False
+                                text = _("Operation canceled by user")
                                 if output == "success":
                                     flag_success = True
-                                elif output == "Операция отменена пользователем":
+                                elif output == text:
                                     flag_cancel = True
                                 if flag_success:
-                                    win.print_simple_info("Сертификат успешно скопирован в контейнер")
+                                    text = _("The certificate was successfully copied to the container")
+                                    win.print_simple_info(text)
                                 elif flag_cancel:
-                                    win.print_simple_info("Операция отменена пользователем")
+                                    text = _("Operation canceled by user")
+                                    win.print_simple_info(text)
                                 else:
                                     win.print_big_error(output, 500, 300)
                 else:
-                    win.print_simple_info("Операция отменена пользователем")
+                    text = _("Operation canceled by user")
+                    win.print_simple_info(text)
             else:
-                win.print_simple_info("Токены не обнаружены")
+                text = _("Tokens not found")
+                win.print_simple_info(text)
         else:
-            win.print_simple_info("Токены не обнаружены")
+            text = _("Tokens not found")
+            win.print_simple_info(text)
 
     def delete_cert(self, button):
         (model, iter) = self.cert_selection.get_selected()
@@ -1982,7 +1712,8 @@ class TokenUI(Gtk.Box):
             if self.info_class.delete_from_Token() == Gtk.ResponseType.OK:
                 ret = del_cont(self.cert)
                 if ret == u"Сертификат успешно удален":
-                    self.info_class.print_simple_info(ret)
+                    text = _("Certificate removed successfully")
+                    self.info_class.print_simple_info(text)
                     self.cert_list.remove(iter)
                     self.cert_selection.unselect_all()
                 else:
@@ -1995,7 +1726,8 @@ class TokenUI(Gtk.Box):
             if self.info_class.delete_from_nonToken() == Gtk.ResponseType.OK:
                 ret = del_store_cert(self.store, self.certID)
                 if ret == u"Сертификат успешно удален":
-                    self.info_class.print_simple_info(ret)
+                    text = _("Certificate removed successfully")
+                    self.info_class.print_simple_info(text)
                 else:
                     self.info_class.print_info(ret, 1000, 500)
                 self.cert_delete.set_sensitive(False)
@@ -2055,19 +1787,20 @@ class TokenUI(Gtk.Box):
             line = cert_info[int(cert_index) - 1]
         if line:
             cert_view = ViewCert()
-            cert_view.set_model(Gtk.ListStore(str, Gdk.RGBA), True)
+            model = Gtk.ListStore(str, Gdk.RGBA)
+
             color = Gdk.RGBA(red=0, green=0, blue=0, alpha=0)
-            cert_view.set_title("Просмотр")
-            item = "<b>Эмитент</b>"
-            cert_view.cert_listview.append([item, color])
+            item = _("<b>Issuer</b>")
+            model.append([item, color])
             issuer_info = dict(re.findall(
                 '([A-Za-z0-9\.]+?)=([\xab\xbb\(\)\w \.\,0-9@\-\#\/\"\/\']+|\"(?:\\.|[^\"])*\")(?:, |$)', line[1],
                 re.UNICODE))
             for field in issuer_info:
                 item = '<b>%s</b>: %s' % (translate_cert_fields(field), issuer_info[field])
-                cert_view.cert_listview.append([item, color])
-            item = '<b>Субъект</b>:'
-            cert_view.cert_listview.append([item, color])
+                model.append([item, color])
+
+            item = _('<b>Subject</b>:')
+            model.append([item, color])
             subject_info = dict(re.findall(
                 '([A-Za-z0-9\.]+?)=([\xab\xbb\(\)\w \.\,0-9@\-\#\/\"\/\']+|\"(?:\\.|[^\"])*\")(?:, |$)', line[2],
                 re.UNICODE))
@@ -2082,21 +1815,24 @@ class TokenUI(Gtk.Box):
                             translate_cert_fields(field), subject_info[field][6:-1]))
                 else:
                     item = ('<b>%s</b>: %s' % (translate_cert_fields(field), subject_info[field]))
-                cert_view.cert_listview.append([item, color])
+                model.append([item, color])
             cert_serial = line[3][2:]
-            item = '<b>Серийный номер</b>: %s' % cert_serial
-            cert_view.cert_listview.append([item, color])
+            text =_("Serial number")
+            item = '<b>%s</b>: %s' % (text, cert_serial)
+            model.append([item, color])
             not_valid_before = datetime.strptime(line[6], '%d/%m/%Y  %H:%M:%S ')
-            item = '<b>Не действителен до</b>: %s' % datetime.strftime(not_valid_before, '%d.%m.%Y %H:%M:%S')
-            cert_view.cert_listview.append([item, color])
+            text =  _("Not valid until")
+            item = '<b>%s</b>: %s' % (text, datetime.strftime(not_valid_before, '%d.%m.%Y %H:%M:%S'))
+            model.append([item, color])
             not_valid_after = datetime.strptime(line[7], '%d/%m/%Y  %H:%M:%S ')
             color = Gdk.RGBA(red=0, green=0, blue=0, alpha=0)  # transparent to apply system colors
             if not_valid_after < datetime.utcnow():
                 color = Gdk.RGBA(red=252, green=133, blue=133, alpha=1)
-            item = '<b>Не действителен после</b>: %s' % datetime.strftime(not_valid_after, '%d.%m.%Y %H:%M:%S')
-            cert_view.cert_listview.append([item, color])
-            item = '<b>Расширенное использование ключа</b>: '
-            cert_view.cert_listview.append([item, color])
+            text = _("Not valid after")
+            item = '<b>%s</b>: %s' % (text, datetime.strftime(not_valid_after, '%d.%m.%Y %H:%M:%S'))
+            model.append([item, color])
+            item = _('<b>Advanced key usage</b>: ')
+            model.append([item, color])
             try:
                 if type(line[8]) == str:
                     lines = line[8].split('\n')
@@ -2106,34 +1842,36 @@ class TokenUI(Gtk.Box):
                 elif type(line[8]) == list:
                     ext_key = line[8]
             except IndexError:
-                ext_key = ['<i>Не имеет</i>']
+                text = _("<i>Does not have</i>")
+                ext_key = [text]
             for oid in ext_key:
                 item = translate_cert_fields(oid)
-                cert_view.cert_listview.append([item, color])
+                model.append([item, color])
             try:
                 if type(line[9]) == str and len(line[9]) > 0:
-                    item = '<b>Необходимые корневые сертификаты</b>: '
-                    cert_view.cert_listview.append([item, color])
+                    item = _('<b>Required Root Certificates</b>: ')
+                    model.append([item, color])
                     for l in line[9].split("\n"):
-                        cert_view.cert_listview.append([l, color])
+                        model.append([l, color])
                     self.CA_LIST_STR = line[9]
             except IndexError:
                 pass
             try:
                 if type(line[10]) == str and len(line[10]) > 0:
-                    item = '<b>Необходимые промежуточные сертификаты</b>: '
-                    cert_view.cert_listview.append([item, color])
+                    item = _('<b>Required CRLs</b>: ')
+                    model.append([item, color])
                     for l in line[10].split("\n"):
-                        cert_view.cert_listview.append([l, color])
+                        model.append([l, color])
                     self.CDP_LIST_STR = line[10]
             except IndexError:
                 pass
-            cert_view.connect("destroy", Gtk.main_quit)
-            cert_view.show_all()
-            Gtk.main()
+            text1 = _("View")
+            text2 = _("Certificate")
+            cert_view.viewcert_model(model, True, text1, text2)
         else:
             win = InfoClass()
-            win.print_error("Открытая часть сертификата не обнаружена")
+            text = _("The public part of the certificate was not found")
+            win.print_error(text)
 
     def get_tree_cell_text(self, col, cell, model, iter, user_data):
         cell.set_property('text', model.get_value(iter, 1))
@@ -2154,13 +1892,14 @@ class TokenUI(Gtk.Box):
     def view_license(self, widget):
         license_info = self.get_license()
         license_view = ViewCert()
-        license_view.set_model(Gtk.ListStore(str), False)
         item = license_info.decode("utf-8")
-        license_view.cert_listview.append([item])
-        license_view.set_title("Просмотр лицензий КриптоПро CSP")
-        license_view.connect("destroy", Gtk.main_quit)
-        license_view.show_all()
-        Gtk.main()
+        item = item.split("\n")
+        cert_listview = Gtk.ListStore(str)
+        for it in item:
+            cert_listview.append([it])
+        title = _("View CryptoPRO CSP license")
+        column = _("License")
+        license_view.viewcert_model(model=cert_listview, with_color=False, title=title, column=column)
 
     def hdimage_container_install(self, widget):
         win = InfoClass()
@@ -2186,7 +1925,8 @@ class TokenUI(Gtk.Box):
                             if out_name != "empty" and out_name != "canceled":
                                 container_name = out_name
                                 dest_stores = get_tokens()[0]
-                                if dest_stores != '<ключевых носителей не обнаружено>':
+                                text = _("<key carriers not found>")
+                                if dest_stores != text:
                                     list_dest = Gtk.ListStore(str, bool)
                                     for store in dest_stores:
                                         list_dest.append([store, False])
@@ -2198,8 +1938,8 @@ class TokenUI(Gtk.Box):
                                                 selected_store = row[0]
                                                 selected_stores += 1
                                         if selected_stores > 1:
-                                            win.print_error("Необходимо выбрать 1 хранилище\n"
-                                                            "для завершения экспортирования")
+                                            text = _("You must select 1 storage\nto complete the export")
+                                            win.print_error(text)
                                         elif selected_stores == 1:
                                             output = os.popen(
                                                 f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{selected_store_hdimage}' "
@@ -2207,26 +1947,36 @@ class TokenUI(Gtk.Box):
 
                                             if not win.install_cert_from_or_to_container(
                                                     f"\\\\.\\{selected_store}\\{container_name}", selected_store):
-                                                win.print_simple_info("Операция отменена пользователем")
+                                                text = _("Operation canceled by user")
+                                                win.print_simple_info(text)
                                     else:
-                                        win.print_simple_info("Операция отменена пользователем")
+                                        text = _("Operation canceled by user")
+                                        win.print_simple_info(text)
                                 else:
-                                    win.print_error("Токены не обнаружены")
+                                    text = _("Tokens not found")
+                                    win.print_error(text)
                             elif out_name == "canceled":
-                                win.print_simple_info("Операция отменена пользователем")
+                                text = _("Operation canceled by user")
+                                win.print_simple_info(text)
                             elif out_name == "empty":
-                                win.print_error("Не введено имя")
+                                text = _("Name not entered")
+                                win.print_error(text)
                         else:
-                            win.print_error("Пожалуйста, выберите только 1 контейнер")
+                            text = _("Please choose only 1 container")
+                            win.print_error(text)
                     else:
-                        win.print_error("Не выбрано контейнеров")
+                        text = _("No containers selected")
+                        win.print_error(text)
                 else:
-                    win.print_simple_info("Операция отменена пользователем")
+                    text = _("Operation canceled by user")
+                    win.print_simple_info(text)
             else:
-                win.print_error("Хранилища в hdimage не обнаружены")
+                text = _("No storage found in hdimage")
+                win.print_error(text)
 
         else:
-            win.print_simple_info("Операция отменена пользователем")
+            text = _("Operation canceled by user")
+            win.print_simple_info(text)
 
     def export_container_cert(self, widget):
         win = InfoClass()
@@ -2257,25 +2007,34 @@ class TokenUI(Gtk.Box):
                                 if path:
                                     output = export_cert(selected_store, f"{path}/{cert_name}.cer")
                                     if output == u"Сертификат успешно экспортирован":
-                                        win.print_simple_info("Сертификат успешно экспортирован")
+                                        text = _("Certificate successfully exported")
+                                        win.print_simple_info(text)
                                     else:
                                         win.print_big_error(output, 500, 300)
                                 else:
-                                    win.print_simple_info("Операция отменена пользователем")
+                                    text = _("Operation canceled by user")
+                                    win.print_simple_info(text)
                             elif out_name == "canceled":
-                                win.print_simple_info("Операция отменена пользователем")
+                                text = _("Operation canceled by user")
+                                win.print_simple_info(text)
                             elif out_name == "empty":
-                                win.print_error("Не введено имя")
+                                text = _("Name not entered")
+                                win.print_error(text)
                         else:
-                            win.print_error("Пожалуйста, выберите только 1 контейнер")
+                            text = _("Please choose only 1 container")
+                            win.print_error(text)
                     else:
-                        win.print_error("Не выбрано контейнеров")
+                        text = _("No containers selected")
+                        win.print_error(text)
                 else:
-                    win.print_simple_info("Операция отменена пользователем")
+                    text = _("Operation canceled by user")
+                    win.print_simple_info(text)
             else:
-                win.print_error("Хранилища не обнаружены")
+                text = _("Vaults not found")
+                win.print_error(text)
         else:
-            win.print_simple_info("Операция отменена пользователем")
+            text = _("Operation canceled by user")
+            win.print_simple_info(text)
 
     def token_container_install(self, widget):
         win = InfoClass()
@@ -2297,10 +2056,13 @@ class TokenUI(Gtk.Box):
                             if cont[1]:
                                 selected += 1
                         if selected > 1:
-                            win.print_simple_info(f"Выбрано {selected} контейнера(ов),\n"
-                                                  f"приготовьтесь ввести пароли контейнеров\nнесколько раз и выбрать "
-                                                  f"сертификаты\nоткрытой части ключа\n"
-                                                  f"(если они не установятся автоматически)")
+                            text1 = _("Selected")
+                            text2 = _("container(s),\n"
+                                      "prepare to enter passwords for containers\n"
+                                      "several times and select certificates\n"
+                                      "of the public part of the key\n"
+                                      "(if they are not installed automatically")
+                            win.print_simple_info(f"{text1} {selected} {text2}")
                         for cont in selected_containers:
                             if cont[1]:
                                 name = cont[0].split("\\")
@@ -2321,8 +2083,8 @@ class TokenUI(Gtk.Box):
                                                 selected_store = row[0]
                                                 selected_stores += 1
                                         if selected_stores != 1:
-                                            win.print_error("Необходимо выбрать 1 хранилище\n"
-                                                            "для завершения экспортирования")
+                                            text = _("You need to select 1 storage\nto complete the export")
+                                            win.print_error(text)
                                         elif selected_stores == 1:
                                             output = os.popen(
                                                 f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{cont[0]}' "
@@ -2330,21 +2092,29 @@ class TokenUI(Gtk.Box):
 
                                             if not win.install_cert_from_or_to_container(
                                                     f"\\\\.\\{selected_store}\\{container_name}", selected_store):
-                                                win.print_simple_info("Операция отменена пользователем")
+                                                text = _("Operation canceled by user")
+                                                win.print_simple_info(text)
                                     else:
-                                        win.print_simple_info("Операция отменена пользователем")
+                                        text = _("Operation canceled by user")
+                                        win.print_simple_info(text)
                                 elif out_name == "canceled":
-                                    win.print_simple_info("Операция отменена пользователем")
+                                    text = _("Operation canceled by user")
+                                    win.print_simple_info(text)
                                 elif out_name == "empty":
-                                    win.print_error("Не введено имя")
+                                    text = _("Name not entered")
+                                    win.print_error(text)
                     else:
-                        win.print_simple_info("Операция отменена пользователем")
+                        text = _("Operation canceled by user")
+                        win.print_simple_info(text)
                 else:
-                    win.print_simple_info("Токены не обнаружены")
+                    text = _("Tokens not found")
+                    win.print_simple_info(text)
             else:
-                win.print_simple_info("Токены не обнаружены")
+                text = _("Tokens not found")
+                win.print_simple_info(text)
         else:
-            win.print_simple_info("Операция отменена пользователем")
+            text = _("Operation canceled by user")
+            win.print_simple_info(text)
 
     def call_flash_container_install(self, secretnet):
         win = InfoClass()
@@ -2375,10 +2145,13 @@ class TokenUI(Gtk.Box):
                         if find_name:
                             find_name = find_name[0].strip()
                             if selected > 1:
-                                win.print_simple_info(f"Выбрано {len(selected_containers)} контейнера(ов),\n"
-                                                      f"приготовьтесь ввести пароли контейнеров\nнесколько раз и выбрать "
-                                                      f"сертификаты\nоткрытой части ключа\n(если они не "
-                                                      f"установятся автоматически)")
+                                text1 = _("Selected")
+                                text2 = _("container(s),\n"
+                                          "prepare to enter passwords for containers\n"
+                                          "several times and select certificates\n"
+                                          "of the public part of the key\n"
+                                          "(if they are not installed automatically")
+                                win.print_simple_info(f"{text1} {len(selected_containers)} {text2}")
                             for cont in selected_containers:
                                 if cont[1]:
                                     name = cont[0].split("\\")
@@ -2402,8 +2175,8 @@ class TokenUI(Gtk.Box):
                                                     selected_store = row[0]
                                                     selected_stores += 1
                                             if selected_stores != 1:
-                                                win.print_error("Необходимо выбрать 1 хранилище\n"
-                                                                "для завершения экспортирования")
+                                                text = _("You need to select 1 storage\nto complete the export")
+                                                win.print_error(text)
                                             elif selected_stores == 1:
                                                 output = os.popen(
                                                     f"/opt/cprocsp/bin/{arch}/csptest -keycopy -contsrc '{cont[0]}' "
@@ -2411,19 +2184,26 @@ class TokenUI(Gtk.Box):
 
                                                 if not win.install_cert_from_or_to_container(
                                                         f"\\\\.\\{selected_store}\\{container_name}", selected_store):
-                                                    win.print_simple_info("Операция отменена пользователем")
+                                                    text = _("Operation canceled by user")
+                                                    win.print_simple_info(text)
                                         else:
-                                            win.print_simple_info("Операция отменена пользователем")
+                                            text = _("Operation canceled by user")
+                                            win.print_simple_info(text)
                                     elif out_name == "canceled":
-                                        win.print_simple_info("Операция отменена пользователем")
+                                        text = _("Operation canceled by user")
+                                        win.print_simple_info(text)
                                     elif out_name == "empty":
-                                        win.print_error("Не введено имя")
+                                        text = _("Name not entered")
+                                        win.print_error(text)
                                 else:
-                                    win.print_simple_info("Выбран не верный путь, отмена операции")
+                                    text = _("Wrong path selected, operation canceled")
+                                    win.print_simple_info(text)
             else:
-                win.print_simple_info("Операция отменена пользователем")
+                text = _("Operation canceled by user")
+                win.print_simple_info(text)
         else:
-            win.print_simple_info("Не обнаружено контейнеров,\nотносящихся к usb-flash накопителю")
+            text = _("No containers found related to the usb-flash drive")
+            win.print_simple_info(text)
 
     def usb_flash_container_install(self, widget):
         win = InfoClass()
@@ -2437,13 +2217,16 @@ class TokenUI(Gtk.Box):
                 if status == "installed":
                     self.call_flash_container_install(True)
                 elif status == "just_installed":
-                    win.print_simple_info("Переподключите usb-flash накопитель\nи повторите операцию")
+                    text = _("Reconnect the usb-flash drive\nand repeat the operation")
+                    win.print_simple_info(text)
                 elif status == "canceled":
-                    win.print_simple_info("Операция отменена пользователем")
+                    text = _("Operation canceled by user")
+                    win.print_simple_info(text)
             else:
                 self.call_flash_container_install(False)
         else:
-            win.print_simple_info("Операция отменена пользователем")
+            text = _("Operation canceled by user")
+            win.print_simple_info(text)
 
     def install_cert(self, widget):
         win = InfoClass()
@@ -2454,7 +2237,8 @@ class TokenUI(Gtk.Box):
         global appdir
         domain_info = os.popen(f"{appdir}/usr/sbin/realm list").readlines() if appdir else os.popen("/usr/sbin/realm list").readlines()
         if domain_info:
-            status = self.info_class.call_secretnet_configs("доменных пользователей", "domain")
+            text1 = _("domain users")
+            status = self.info_class.call_secretnet_configs(text1, "domain")
             if status == "installed":
 
                 if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.0"):
@@ -2478,52 +2262,55 @@ class TokenUI(Gtk.Box):
                     except IndexError:
                         pass
                     if CA_LIST_STR != "" or CDP_LIST_STR != "":
-                        self.info_class.print_simple_info(
-                            u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                        strk_out = []
-                        errors_ca = []
-                        success_ca = []
-                        errors_cdp = []
-                        success_cdp = []
-                        if CA_LIST_STR != "":
-                            for ca in CA_LIST_STR.split("\n"):
-                                out = install_CA_extra(ca, "mRoot") if store == "mMy" else install_CA_extra(ca, "uRoot")
-                                success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
-                                time.sleep(2)
-                        if CDP_LIST_STR != "":
-                            for cdp in CDP_LIST_STR.split("\n"):
-                                out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
-                                success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
-                                time.sleep(2)
-                        if len(success_ca) > 0:
-                            strk_out.append("Успешно установлены корневые сертификаты:")
-                            for succ in success_ca:
-                                strk_out.append(f"{succ}")
+                        if win.ask_about_extras(self) == Gtk.ResponseType.OK:
+                            strk_out = ""
+                            errors_ca = []
+                            success_ca = []
+                            errors_cdp = []
+                            success_cdp = []
+                            if CA_LIST_STR != "":
+                                for ca in CA_LIST_STR.split("\n"):
+                                    out = install_CA_extra(ca, "mRoot") if store == "mMy" else install_CA_extra(ca, "uRoot")
+                                    success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                    time.sleep(2)
+                            if CDP_LIST_STR != "":
+                                if CA_LIST_STR != "":
+                                    strk_out += "\n"
 
-                        if len(success_cdp) > 0:
+                                for cdp in CDP_LIST_STR.split("\n"):
+                                    out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
+                                    success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                    time.sleep(2)
                             if len(success_ca) > 0:
-                                strk_out += "\n"
-                            strk_out.append("Успешно установлены сертификаты отзыва:")
-                            for succ in success_cdp:
-                                strk_out.append(f"{succ}")
+                                text = _("Successfully installed root certificates:")
+                                strk_out.append(text)
+                                for succ in success_ca:
+                                    strk_out.append(f"{succ}")
 
-                        if len(errors_ca) > 0:
-                            if len(success_ca) > 0 or len(success_cdp) > 0:
-                                strk_out += "\n"
-                            strk_out.append("Ошибка при установке корневых сертификатов:")
-                            for err in errors_ca:
-                                strk_out.append(f"{err[0]}\n{err[1]}")
+                            if len(success_cdp) > 0:
+                                if len(success_ca) > 0:
+                                    strk_out += "\n"
+                                text = _("Successfully installed CRLs:")
+                                strk_out.append(text)
+                                for succ in success_cdp:
+                                    strk_out.append(f"{succ}")
 
-                        if len(errors_cdp) > 0:
-                            strk_out.append("Ошибка при установке сертификатов отзыва:")
-                            for err in errors_cdp:
-                                strk_out.append(f"{err[0]}\n{err[1]}")
+                            if len(errors_ca) > 0:
+                                if len(success_ca) > 0 or len(success_cdp) > 0:
+                                    strk_out += "\n"
+                                text = _("Error installing root certificates:")
+                                strk_out.append(text)
+                                for err in errors_ca:
+                                    strk_out.append(f"{err[0]}\n{err[1]}")
 
-                        view = ViewCertOutput()
-                        view.set_model(strk_out)
-                        view.connect("destroy", Gtk.main_quit)
-                        view.show_all()
-                        Gtk.main()
+                            if len(errors_cdp) > 0:
+                                text = _("Error installing CRLs:")
+                                strk_out.append(text)
+                                for err in errors_cdp:
+                                    strk_out.append(f"{err[0]}\n{err[1]}")
+                            view = ViewCertOutput()
+                            view.viewcertoutput_model(strk_out, "", "")
+                        os.system("rm -rf /tmp/token-manager/")
                 else:
                     # Вариант с открытой частью не удался, предлагаем пользователю самому выбрать сертификат для закрытой части.
                     output = win.choose_open_cert_to_close_container(self.cert)
@@ -2533,9 +2320,11 @@ class TokenUI(Gtk.Box):
                             strk += line
                         self.info_class.print_error(strk)
             elif status == "just_installed":
-                win.print_simple_info("Переподключите usb-flash накопитель\nи повторите операцию")
+                text = _("Reconnect the usb-flash drive\nand repeat the operation")
+                win.print_simple_info(text)
             elif status == "canceled":
-                win.print_simple_info("Операция отменена пользователем")
+                text = _("Operation canceled by user")
+                win.print_simple_info(text)
         else:
             if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.0"):
                 if win.ask_about_mmy(self) == Gtk.ResponseType.OK:
@@ -2559,53 +2348,55 @@ class TokenUI(Gtk.Box):
                 except IndexError:
                     pass
                 if CA_LIST_STR != "" or CDP_LIST_STR != "":
-                    self.info_class.print_simple_info(
-                        u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                    strk_out = []
-                    errors_ca = []
-                    success_ca = []
-                    errors_cdp = []
-                    success_cdp = []
-                    if CA_LIST_STR != "":
-
-                        for ca in CA_LIST_STR.split("\n"):
-                            out = install_CA_extra(ca, "mRoot") if store == "mMy" else install_CA_extra(ca, "uRoot")
-                            success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
-                            time.sleep(2)
-                    if CDP_LIST_STR != "":
+                    if win.ask_about_extras(self) == Gtk.ResponseType.OK:
+                        strk_out = []
+                        errors_ca = []
+                        success_ca = []
+                        errors_cdp = []
+                        success_cdp = []
                         if CA_LIST_STR != "":
-                            strk_out += "\n"
-                        for cdp in CDP_LIST_STR.split("\n"):
-                            out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
-                            success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
-                            time.sleep(2)
-                    if len(success_ca) > 0:
-                        strk_out.append("Успешно установлены корневые сертификаты:")
-                        for succ in success_ca:
-                            strk_out.append(f"{succ}")
 
-                    if len(success_cdp) > 0:
-                        strk_out.append("Успешно установлены сертификаты отзыва:")
-                        for succ in success_cdp:
-                            strk_out.append(f"{succ}")
+                            for ca in CA_LIST_STR.split("\n"):
+                                out = install_CA_extra(ca, "mRoot") if store == "mMy" else install_CA_extra(ca, "uRoot")
+                                success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                time.sleep(2)
+                        if CDP_LIST_STR != "":
+                            if CA_LIST_STR != "":
+                                strk_out += "\n"
+                            for cdp in CDP_LIST_STR.split("\n"):
+                                out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
+                                success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                time.sleep(2)
+                        if len(success_ca) > 0:
+                            text = _("Successfully installed root certificates:")
+                            strk_out.append(text)
+                            for succ in success_ca:
+                                strk_out.append(f"{succ}")
 
-                    if len(errors_ca) > 0:
-                        strk_out.append("Ошибка при установке корневых сертификатов:")
-                        for err in errors_ca:
-                            strk_out.append(f"{err[0]}\n{err[1]}")
+                        if len(success_cdp) > 0:
+                            text = _("Successfully installed CRLs:")
+                            strk_out.append(text)
+                            for succ in success_cdp:
+                                strk_out.append(f"{succ}")
 
-                    if len(errors_cdp) > 0:
-                        strk_out.append("Ошибка при установке сертификатов отзыва:")
-                        for err in errors_cdp:
-                            strk_out.append(f"{err[0]}\n{err[1]}")
+                        if len(errors_ca) > 0:
+                            text = _("Error installing root certificates:")
+                            strk_out.append(text)
+                            for err in errors_ca:
+                                strk_out.append(f"{err[0]}\n{err[1]}")
 
-                    view = ViewCertOutput()
-                    view.set_model(strk_out)
-                    view.connect("destroy", Gtk.main_quit)
-                    view.show_all()
-                    Gtk.main()
+                        if len(errors_cdp) > 0:
+                            text = _("Error installing CRLs:")
+                            strk_out.append(text)
+                            for err in errors_cdp:
+                                strk_out.append(f"{err[0]}\n{err[1]}")
+
+                        view = ViewCertOutput()
+                        view.viewcertoutput_model(strk_out, "", "")
+                    os.system("rm -rf /tmp/token-manager/")
                 else:
-                    self.info_class.print_simple_info(u"Сертификат успешно установлен.")
+                    text = _("Certificate installed successfully")
+                    self.info_class.print_simple_info(text)
             else:
                 # Вариант с открытой частью не удался, предлагаем пользователю самому выбрать сертификат для закрытой части.
                 output = win.choose_open_cert_to_close_container(self.cert)
@@ -2627,32 +2418,21 @@ class TokenUI(Gtk.Box):
 
     def view_root(self, widget):
         root_info = list_root_certs()
-        root_view = ListCert(root_info, True)
-        root_view.connect("destroy", Gtk.main_quit)
-        root_view.set_title("Корневые сертификаты")
-        root_view.set_model(Gtk.ListStore(str, str, str, Gdk.RGBA), True)
-        Gtk.main()
+        root_view = ListCert()
+        text = _("Root certificates")
+        root_view.listcert_model(Gtk.ListStore(str, str, str, Gdk.RGBA), True, text, root_info, True)
 
     def view_crl(self, widget):
         crl_info = list_crls()
-        crl_view = ListCert(crl_info, False)
-        crl_view.connect("destroy", Gtk.main_quit)
-        crl_view.set_title("Отозванные сертификаты")
-        crl_view.set_model(Gtk.ListStore(str, str, Gdk.RGBA), True)
-        Gtk.main()
-
-    def about_iterate_self(self, widget):
-        about = About()
-        about.set_title("О программе")
-        about.connect("destroy", Gtk.main_quit)
-        about.show_all()
-        Gtk.main()
+        crl_view = ListCert()
+        text = _("CRLs")
+        crl_view.listcert_model(Gtk.ListStore(str, str, Gdk.RGBA), True, text, crl_info, False)
 
     def usefull_install(self, widget):
-        webbrowser.open_new_tab("https://redos.red-soft.ru/base/other-soft/szi/cryptopro-4/")
+        webbrowser.open_new_tab("https://redos.red-soft.ru/base/other-soft/szi/cryptopro/")
 
     def usefull_commands(self, widget):
-        webbrowser.open_new_tab("https://redos.red-soft.ru/base/other-soft/szi/certs-cryptopro/")
+        webbrowser.open_new_tab("https://redos.red-soft.ru/base/other-soft/szi/cryptopro/certs-cryptopro/")
 
     def refresh_token(self, button):
         self.token_list.clear()
@@ -2660,7 +2440,7 @@ class TokenUI(Gtk.Box):
             self.cert_selection.unselect_all()
         tokens = get_tokens()
         root_store_item = TokenListItem()
-        root_store_item.text = "Хранилище корневых сертификатов"
+        root_store_item.text = _("Root certificates storage")
         root_store_item.isToken = False
         root_store_item.storage = 'uRoot'
         root_store_item.icon = 'root'
@@ -2668,7 +2448,7 @@ class TokenUI(Gtk.Box):
             [root_store_item.icon, root_store_item.text, root_store_item.storage, root_store_item.isToken])
 
         personal_store_item = TokenListItem()
-        personal_store_item.text = "Личное хранилище сертификатов"
+        personal_store_item.text = _("Personal certificates storage")
         personal_store_item.isToken = False
         personal_store_item.storage = 'uMy'
         personal_store_item.icon = "personal"
@@ -2676,13 +2456,14 @@ class TokenUI(Gtk.Box):
                                 personal_store_item.isToken])
         if tokens[1]:
             self.token_item = TokenListItem()
-            self.token_item.text = '<Ключевых носителей не обнаружено>'
+            self.token_item.text = _('<No Key Carriers Found>')
         else:
             self.tokens_for_import_container = Gtk.ListStore(str, bool)
             for token in tokens[0]:
                 token_item = TokenListItem()
                 token_item.token_name = token
-                token_item.text = ('%s - сер. № %s' % (token, self.get_token_serial(token)))
+                text = _("serial")
+                token_item.text = ('%s - %s № %s' % (token, text, self.get_token_serial(token)))
                 token_item.icon = "usb"
                 self.token_list.append([token_item.icon, token_item.text, token_item.storage + "||" +
                                         token_item.token_name, token_item.isToken])
@@ -2706,12 +2487,6 @@ class TokenUI(Gtk.Box):
     def versiontuple(self, v):
         return tuple(map(int, (v.split("."))))
 
-    def set_reader(self, button):
-        if self.set_as_reader(self.token):
-            self.info_class.print_simple_info("Ключевой носитель %s успешно добавлен в качестве "
-                                              "считывателя" % self.token_name)
-        else:
-            self.info_class.print_simple_info("Произошла ошибка")
 
     def set_as_reader(self, token):
         global appdir
@@ -2730,13 +2505,15 @@ class TokenUI(Gtk.Box):
         result = os.popen(f"/opt/cprocsp/bin/{arch}/csptest -passwd -qchange -container '{container}'").readlines()
         for line in result:
             if "[ErrorCode: 0x00000000]" in line:
-                self.info_class.print_simple_info("Пин код успешно изменен")
+                text = _("PIN code changed successfully")
+                self.info_class.print_simple_info(text)
 
     def cache_pin(self, button):
         result = self.info_class.cache_pin()
         if (result[0] == Gtk.ResponseType.OK) and (result[1] != ''):
             if not self.add_ini(result[1], self.cont_id):
-                self.info_class.print_simple_info("PIN-код успешно сохранен")
+                text = _("PIN code saved successfully")
+                self.info_class.print_simple_info(text)
 
     def add_ini(self, pin, cont_id):
         cpconfig = subprocess.Popen(['/opt/cprocsp/sbin/%s/cpconfig' % arch, '-ini',
@@ -2755,99 +2532,40 @@ class TokenListItem:
     def __init__(self):
         super(TokenListItem, self).__init__()
 
-
-class About(Gtk.Window):
+class ListCert(Gtk.Window):
     def __init__(self):
-        super(About, self).__init__()
-        self.set_keep_above(True)
-        self.set_border_width(5)
-        hb = Gtk.HeaderBar()
-        hb.set_show_close_button(False)
-        button = Gtk.Button.new_with_label("X")
-        button.connect("clicked", self.button_close_clicked)
-        hb.pack_end(button)
-        self.set_titlebar(hb)
-        self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        self.set_position(Gtk.WindowPosition.CENTER)
-        self.set_skip_taskbar_hint(True)
-        self.set_resizable(False)
-        global appdir
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file(
-            filename=f"{appdir}/usr/share/icons/hicolor/64x64/apps/token-manager.png"
-            ) if appdir else GdkPixbuf.Pixbuf.new_from_file(
-            filename="/usr/share/icons/hicolor/64x64/apps/token-manager.png"
-            )
+        Gtk.Window.__init__(self)
 
-
-        self.image = Gtk.Image.new_from_pixbuf(pixbuf)
-        self.box.pack_start(self.image, False, False, 0)
-        self.label = Gtk.Label()
-        self.label.set_markup(f"<b>token-manager {VERSION}</b>\n"
-                              "Версия CSP: %s\n"
-                              "Класс криптосредств: %s\n"
-                              "Релиз: %s "
-                              "ОС: %s" % get_cspversion())
-        self.label_href = Gtk.Label()
-        self.label_href.set_markup("\n"
-                                   "Борис Макаренко УИТ ФССП России"
-                                   "\nE-mail: <a href='mailto:makarenko@fssprus.ru'>makarenko@fssprus.ru</a>"
-                                   "\n<a href='mailto:bmakarenko90@gmail.com'>bmakarenko90@gmail.com</a>\n"
-                                   "-----------------------------\n"
-                                   "Владлен Мурылев ООО \"РЕД СОФТ\""
-                                   "\nE-mail: <a href='mailto:vladlen.murylyov@red-soft.ru'>vladlen.murylyov@red-soft.ru</a>"
-                                   "\n-----------------------------"
-                                   "\n\t\t<a href='http://opensource.org/licenses/MIT'>Лицензия MIT</a>")
-        self.box.pack_start(self.label, True, True, 0)
-        self.main_box.pack_start(self.box, True, True, 0)
-        self.main_box.pack_end(self.label_href, False, False, 0)
-        self.add(self.main_box)
-
-    def button_close_clicked(self, button):
-        self.destroy()
-
-
-class ListCert(Gtk.ApplicationWindow):
-    list_data = []
-    is_root = False
-
-    def __init__(self, certlist_data, is_root):
-        super(ListCert, self).__init__()
-        self.set_border_width(5)
-        self.set_keep_above(True)
-        hb = Gtk.HeaderBar()
-        hb.set_show_close_button(False)
-        button = Gtk.Button.new_with_label("X")
-        button.connect("clicked", self.button_close_clicked)
-        hb.pack_end(button)
-        self.set_titlebar(hb)
-
-        self.main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        self.set_position(Gtk.WindowPosition.CENTER)
-        self.set_skip_taskbar_hint(True)
+    def listcert_model(self, model, with_color, title, certlist_data, is_root):
         self.list_data = certlist_data
         self.is_root = is_root
-
-    def button_close_clicked(self, button):
-        self.destroy()
-
-    def set_model(self, model, with_color):
         self.token_list = model
         self.filter = self.token_list.filter_new()
         self.filter.set_visible_func(self.visible_cb)
-        self.view = Gtk.TreeView(model=self.filter)
+
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+        dialog = temp_builder.get_object("listcert_model")
+        dialog.set_title(title)
+        self.view = temp_builder.get_object("listcert_model_treeview")
+
+        self.view.set_model(self.filter)
         cell = Gtk.CellRendererText()
 
-        self.entry = Gtk.Entry()
-        self.entry.set_placeholder_text("Type to filter...")
+        self.entry = temp_builder.get_object("listcert_model_entry")
+        text = _("Type to filter...")
+        self.entry.set_placeholder_text(text)
         self.entry.connect("changed", self.refresh_filter)
-        self.main_box.pack_start(self.entry, False, False, 0)
 
         if self.is_root:
-            self.set_size_request(1270, 500)
-            col1 = Gtk.TreeViewColumn("Эмитент", cell, text=0, background_rgba=3)
-            col2 = Gtk.TreeViewColumn("Субъект", cell, text=1, background_rgba=3)
-            col3 = Gtk.TreeViewColumn("Основная информация", cell, text=2, background_rgba=3)
+            dialog.set_size_request(1300, 500)
+            col1_text = _("Issuer")
+            col1 = Gtk.TreeViewColumn(col1_text, cell, text=0, background_rgba=3)
+            col2_text = _("Subject")
+            col2 = Gtk.TreeViewColumn(col2_text, cell, text=1, background_rgba=3)
+            col3_text = _("Basic information")
+            col3 = Gtk.TreeViewColumn(col3_text, cell, text=2, background_rgba=3)
 
             self.view.append_column(col1)
             self.view.append_column(col2)
@@ -2859,23 +2577,25 @@ class ListCert(Gtk.ApplicationWindow):
                 color = Gdk.RGBA(red=0, green=0, blue=0, alpha=0)
                 if not_valid_after < datetime.utcnow():
                     color = Gdk.RGBA(red=252, green=133, blue=133, alpha=1)
+                text1 = _("Serial number")
+                text3 = _("Not available until")
+                text4 = _("Not available after")
+                date1 = datetime.strftime(not_valid_before, '%d.%m.%Y %H:%M:%S')
+                date2 = datetime.strftime(not_valid_after, '%d.%m.%Y %H:%M:%S')
                 if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
-                    item = ('Серийный номер: %s\nSHA1 отпечаток: %s\nНе действителен до: %s\n'
-                            'Не действителен после: %s' % (line[3], line[4],
-                                                           datetime.strftime(not_valid_before, '%d.%m.%Y %H:%M:%S'),
-                                                           datetime.strftime(not_valid_after,
-                                                                             '%d.%m.%Y %H:%M:%S')))
+                    text2 = _("SHA1 fingerprint")
+
+                    item = (f"'{text1}: {line[3]}\n{text2}: {line[4]}\n{text3}: {date1}\n{text4}: {date2}'")
                 else:
-                    item = ('Серийный номер: %s\nХэш SHA1: %s\nНе действителен до: %s\n'
-                            'Не действителен после: %s' % (line[3], line[4],
-                                                           datetime.strftime(not_valid_before, '%d.%m.%Y %H:%M:%S'),
-                                                           datetime.strftime(not_valid_after,
-                                                                             '%d.%m.%Y %H:%M:%S')))
+                    text2 = _("SHA1 hash")
+                    item = (f"'{text1}: {line[3]}\n{text2}: {line[4]}\n{text3}: {date1}\n{text4}: {date2}'")
                 self.token_list.append([line[1], line[2], item, color])
         else:
             self.set_default_size(800, 343)
-            col1 = Gtk.TreeViewColumn("Субъект", cell, text=0, background_rgba=2)
-            col2 = Gtk.TreeViewColumn("Даты", cell, text=1, background_rgba=2)
+            text1 = _("Subject")
+            col1 = Gtk.TreeViewColumn(text1, cell, text=0, background_rgba=2)
+            text2 = _("Dates")
+            col2 = Gtk.TreeViewColumn(text2, cell, text=1, background_rgba=2)
 
             self.view.append_column(col1)
             self.view.append_column(col2)
@@ -2887,16 +2607,15 @@ class ListCert(Gtk.ApplicationWindow):
 
                 if next_update < datetime.utcnow():
                     color = Gdk.RGBA(red=252, green=133, blue=133, alpha=1)
-                item = ('Дата выпуска: %s UTC\nДата обновления: %s UTC' %
-                        (datetime.strftime(this_update, '%d.%m.%Y %H:%M:%S'),
-                         datetime.strftime(next_update, '%d.%m.%Y %H:%M:%S')))
+                date1 = datetime.strftime(this_update, '%d.%m.%Y %H:%M:%S')
+                date2 = datetime.strftime(next_update, '%d.%m.%Y %H:%M:%S')
+                text1 = _("Date of issue")
+                text2 = _("Update date")
+                item = (f'{text1}: {date1} UTC\n{text2}: {date2} UTC')
                 self.token_list.append([line[1], item, color])
 
-        self.sw = Gtk.ScrolledWindow()
-        self.sw.add(self.view)
-        self.main_box.pack_start(self.sw, True, True, 0)
-        self.add(self.main_box)
-        self.show_all()
+        response = dialog.run()
+        dialog.destroy()
 
     def refresh_filter(self, widget):
         self.filter.refilter()
@@ -2913,192 +2632,141 @@ class ListCert(Gtk.ApplicationWindow):
         return True if value.startswith(search_query) else False
 
 
-class ViewCert(Gtk.ApplicationWindow):
+class ViewCert(Gtk.Window):
     def __init__(self):
-        super(ViewCert, self).__init__()
-        self.set_default_size(600, 500)
-        self.set_border_width(5)
-        self.set_keep_above(True)
-        hb = Gtk.HeaderBar()
-        hb.set_show_close_button(False)
-        button = Gtk.Button.new_with_label("X")
-        button.connect("clicked", self.button_close_clicked)
-        hb.pack_end(button)
-        self.set_titlebar(hb)
-        self.main_box = Gtk.Box()
-        self.set_position(Gtk.WindowPosition.CENTER)
-        self.set_skip_taskbar_hint(True)
+        Gtk.Window.__init__(self)
+    def viewcert_model(self, model, with_color, title, column):
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
-    def button_close_clicked(self, button):
-        self.destroy()
-
-    def set_model(self, model, with_color):
-        self.cert_listview = model
-        self.view = Gtk.TreeView(model=self.cert_listview)
+        dialog = temp_builder.get_object("viewcert_model")
+        dialog.set_title(title)
+        self.view = temp_builder.get_object("viewcert_treeview")
         cell = Gtk.CellRendererText()
         if with_color:
-            col = Gtk.TreeViewColumn("Сертификаты", cell, markup=0, background_rgba=1)
+            col = Gtk.TreeViewColumn(column, cell, markup=0, background_rgba=1)
         else:
-            col = Gtk.TreeViewColumn("Сертификаты", cell, markup=0)
+            col = Gtk.TreeViewColumn(column, cell, markup=0)
         cell.set_property("editable", True)
         self.view.append_column(col)
-        self.sw = Gtk.ScrolledWindow()
-        self.sw.add(self.view)
-        self.main_box.pack_start(self.sw, True, True, 0)
-        self.add(self.main_box)
-        self.show_all()
+        self.view.set_model(model)
+        response = dialog.run()
+        dialog.destroy()
 
-class ViewCertOutput(Gtk.ApplicationWindow):
+class ViewCertOutput(Gtk.Window):
     def __init__(self):
-        super(ViewCertOutput, self).__init__()
-        self.set_default_size(650, 400)
-        self.set_border_width(5)
-        self.set_keep_above(True)
-        hb = Gtk.HeaderBar()
-        hb.set_show_close_button(False)
-        button = Gtk.Button.new_with_label("X")
-        button.connect("clicked", self.button_close_clicked)
-        hb.pack_end(button)
-        self.set_titlebar(hb)
-        self.main_box = Gtk.Box()
-        self.set_position(Gtk.WindowPosition.CENTER)
-        self.set_skip_taskbar_hint(True)
+        Gtk.Window.__init__(self)
 
+    def viewcertoutput_model(self, info, title, column):
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
-    def set_model(self, info):
+        dialog = temp_builder.get_object("viewcertoutput_model")
+        dialog.set_title(title)
+        self.view = temp_builder.get_object("viewcertoutput_model_treeview")
         self.liststore = Gtk.ListStore(str)
         for i in info:
             self.liststore.append([i])
-        treeview = Gtk.TreeView(model=self.liststore)
-        # sel = treeview.get_selection()
-        # sel.set_mode(Gtk.SelectionMode.NONE)
+
         renderer_text = Gtk.CellRendererText()
         renderer_text.set_property("editable", True)
-        column_text = Gtk.TreeViewColumn("", renderer_text, text=0)
-        treeview.append_column(column_text)
-        scrolled_tree = Gtk.ScrolledWindow()
-        scrolled_tree.add(treeview)
-        self.main_box.pack_start(scrolled_tree, True, True, 0)
-        self.add(self.main_box)
-        self.show_all()
-
-    def button_close_clicked(self, button):
-        self.destroy()
+        column_text = Gtk.TreeViewColumn(column, renderer_text, text=0)
+        self.view.append_column(column_text)
+        self.view.set_model(model=self.liststore)
+        response = dialog.run()
+        dialog.destroy()
 
 class InfoClass(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self)
-        # box = Gtk.Box()
-        # self.add(box)
 
     def print_info(self, info, widtn, heigth):
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
         self.liststore = Gtk.ListStore(str)
         self.liststore.append([info])
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.INFO,
-                                         buttons=Gtk.ButtonsType.OK)
-        dialogWindow.set_title("Информация")
-        dialogWindow.set_resizable(True)
-        dialogBox = dialogWindow.get_content_area()
-        dialogWindow.set_border_width(2)
-        treeview = Gtk.TreeView(model=self.liststore)
+        dialogWindow = temp_builder.get_object("print_info_window")
+        treeview = temp_builder.get_object("print_info_treeview")
+        treeview.set_model(self.liststore)
         sel = treeview.get_selection()
         sel.set_mode(Gtk.SelectionMode.NONE)
         renderer_text = Gtk.CellRendererText()
         column_text = Gtk.TreeViewColumn("", renderer_text, text=0)
         treeview.append_column(column_text)
 
-        scrolled_tree = Gtk.ScrolledWindow()
-        scrolled_tree.add(treeview)
-
-        dialogBox.pack_start(scrolled_tree, True, True, 0)
         dialogWindow.set_size_request(widtn, heigth)
-        dialogWindow.show_all()
         response = dialogWindow.run()
         dialogWindow.destroy()
 
     def print_big_error(self, info, widtn, heigth):
         self.liststore = Gtk.ListStore(str)
         self.liststore.append([info])
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.ERROR,
-                                         buttons=Gtk.ButtonsType.OK)
-        dialogWindow.set_title("Ошибка")
-        dialogWindow.set_resizable(True)
-        dialogBox = dialogWindow.get_content_area()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
-        treeview = Gtk.TreeView(model=self.liststore)
+        dialogWindow = temp_builder.get_object("print_big_error")
+        dialogWindow.add_buttons(Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        treeview = temp_builder.get_object("print_big_error_treeview")
+        treeview.set_model(model=self.liststore)
         sel = treeview.get_selection()
         sel.set_mode(Gtk.SelectionMode.NONE)
         renderer_text = Gtk.CellRendererText()
         column_text = Gtk.TreeViewColumn("", renderer_text, text=0)
         treeview.append_column(column_text)
-
-        scrolled_tree = Gtk.ScrolledWindow()
-        scrolled_tree.add(treeview)
         dialogWindow.set_size_request(widtn, heigth)
-        dialogBox.pack_start(scrolled_tree, True, True, 0)
-        dialogWindow.show_all()
         response = dialogWindow.run()
         dialogWindow.destroy()
 
     def print_simple_info(self, info):
-        dialog = Gtk.MessageDialog(parent=self, flags=0, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK,
-                                   text="Информация")
-        dialog.format_secondary_text(info)
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+        dialog = temp_builder.get_object("print_simple_info")
+        dialog.props.text = info
         dialog.run()
         dialog.destroy()
 
     def print_error(self, error):
-        dialog = Gtk.MessageDialog(parent=self, flags=0, message_type=Gtk.MessageType.ERROR,
-                                   buttons=Gtk.ButtonsType.CANCEL, text="Ошибка")
-        dialog.format_secondary_text(error)
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+        dialog = temp_builder.get_object("print_error")
+        dialog.props.text = error
         dialog.run()
         dialog.destroy()
 
-    def change_pin(self, text):
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL,
-                                         text=text)
-        dialogWindow.set_title("Ввод PIN-кода")
-        dialogBox = dialogWindow.get_content_area()
-        pinEntry = Gtk.Entry()
-        dialogBox.pack_end(pinEntry, False, False, 0)
-        dialogWindow.show_all()
-        response = dialogWindow.run()
-        pin = pinEntry.get_text()
-        dialogWindow.destroy()
-        return [response, pin]
-
     def cache_pin(self):
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL,
-                                         text="Ввод PIN-кода")
-        dialogWindow.set_title("Введите PIN-код:")
-        dialogBox = dialogWindow.get_content_area()
-        pinEntry = Gtk.Entry()
-        dialogBox.pack_end(pinEntry, False, False, 0)
-        dialogWindow.show_all()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+        dialogWindow = temp_builder.get_object("cache_pin")
+        pinEntry = temp_builder.get_object("pinEntry")
+        dialogWindow.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                 Gtk.STOCK_OK, Gtk.ResponseType.OK)
         response = dialogWindow.run()
         pin = pinEntry.get_text()
         dialogWindow.destroy()
         return [response, pin]
 
     def install_local_cert(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Выберите файл(ы)", parent=self,
+        text = _("Choose file(s)")
+        dialog = Gtk.FileChooserDialog(title=text, parent=self,
                                        action=Gtk.FileChooserAction.OPEN,
                                        )
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                            Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         filter = Gtk.FileFilter()
-        filter.set_name("Сертификаты *.cer")
-        filter.add_mime_type("Сертификаты")
+        text = _("Certificates")
+        filter.set_name(f"{text} *.cer")
+        filter.add_mime_type(text)
         filter.add_pattern("*.cer")
         filter.add_pattern("*.CER")
         dialog.add_filter(filter)
@@ -3116,7 +2784,6 @@ class InfoClass(Gtk.Window):
                 store = "uMy"
             ret = inst_cert_from_file(file_name, store)
             if ret == u"Сертификат успешно установлен":
-                # self.print_simple_info(ret)
                 info = get_cert_info_from_file(file_name)
                 CA_LIST_STR = ""
                 CDP_LIST_STR = ""
@@ -3128,92 +2795,85 @@ class InfoClass(Gtk.Window):
                 except IndexError:
                     pass
                 if CA_LIST_STR != "" or CDP_LIST_STR != "":
-                    self.print_simple_info(
-                        u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                    strk_out = []
-                    errors_ca = []
-                    success_ca = []
-                    errors_cdp = []
-                    success_cdp = []
-                    if CA_LIST_STR != "":
-                        for ca in CA_LIST_STR.split("\n"):
-                            out = install_CA_extra(ca, "mRoot") if store == "mMy" else install_CA_extra(ca, "uRoot")
-                            success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
-                            time.sleep(2)
-                    if CDP_LIST_STR != "":
-                        for cdp in CDP_LIST_STR.split("\n"):
-                            out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
-                            success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
-                            time.sleep(2)
-                    if len(success_ca) > 0:
-                        strk_out.append("Успешно установлены корневые сертификаты:")
-                        for succ in success_ca:
-                            strk_out.append(f"{succ}")
+                    if self.ask_about_extras(self) == Gtk.ResponseType.OK:
+                        strk_out = []
+                        errors_ca = []
+                        success_ca = []
+                        errors_cdp = []
+                        success_cdp = []
+                        if CA_LIST_STR != "":
+                            for ca in CA_LIST_STR.split("\n"):
+                                out = install_CA_extra(ca, "mRoot") if store == "mMy" else install_CA_extra(ca, "uRoot")
+                                success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                time.sleep(2)
+                        if CDP_LIST_STR != "":
+                            for cdp in CDP_LIST_STR.split("\n"):
+                                out = install_CDP_extra(cdp, "mRoot") if store == "mMy" else install_CDP_extra(cdp, "uRoot")
+                                success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                time.sleep(2)
+                        if len(success_ca) > 0:
+                            text = _("Successfully installed root certificates:")
+                            strk_out.append(text)
+                            for succ in success_ca:
+                                strk_out.append(f"{succ}")
 
-                    if len(success_cdp) > 0:
-                        strk_out.append("Успешно установлены сертификаты отзыва:")
-                        for succ in success_cdp:
-                            strk_out.append(f"{succ}")
+                        if len(success_cdp) > 0:
+                            text = _("Successfully installed CRLs:")
+                            strk_out.append(text)
+                            for succ in success_cdp:
+                                strk_out.append(f"{succ}")
 
-                    if len(errors_ca) > 0:
-                        strk_out.append("Ошибка при установке корневых сертификатов:")
-                        for err in errors_ca:
-                            strk_out.append(f"{err[0]}\n{err[1]}")
+                        if len(errors_ca) > 0:
+                            text = _("Error installing root certificates:")
+                            strk_out.append(text)
+                            for err in errors_ca:
+                                strk_out.append(f"{err[0]}\n{err[1]}")
 
-                    if len(errors_cdp) > 0:
-                        strk_out.append("Ошибка при установке сертификатов отзыва:")
-                        for err in errors_cdp:
-                            strk_out.append(f"{err[0]}\n{err[1]}")
+                        if len(errors_cdp) > 0:
+                            text = _("Error installing CRLs:")
+                            strk_out.append(text)
+                            for err in errors_cdp:
+                                strk_out.append(f"{err[0]}\n{err[1]}")
 
-                    view = ViewCertOutput()
-                    view.set_model(strk_out)
-                    view.connect("destroy", Gtk.main_quit)
-                    view.show_all()
-                    Gtk.main()
+                        view = ViewCertOutput()
+                        view.viewcertoutput_model(strk_out, "", "")
+                    os.system("rm -rf /tmp/token-manager/")
             else:
                 self.print_info(ret, 350, 300)
         else:
             dialog.destroy()
 
     def enter_license(self, widget):
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL,
-                                         text="Введите лицензионный ключ:")
-        dialogWindow.set_title("Лицензия КриптоПро")
-        dialogWindow.set_border_width(5)
-        dialogWindow.set_size_request(300, 100)
-        dialogWindow.set_resizable(True)
-        dialogBox = dialogWindow.get_content_area()
-        userEntry = Gtk.Entry()
-        dialogBox.pack_end(userEntry, False, False, 0)
-        dialogWindow.show_all()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+        dialogWindow = temp_builder.get_object("enter_license")
+        userEntry = temp_builder.get_object("userEntry")
+        dialogWindow.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                 Gtk.STOCK_OK, Gtk.ResponseType.OK)
         response = dialogWindow.run()
         cpro_license = userEntry.get_text()
         dialogWindow.destroy()
         if (response == Gtk.ResponseType.OK) and (cpro_license != ''):
             l = set_license(cpro_license)
             if l[1]:
-                self.print_error(f'Произошла ошибка: {l[0]}')
+                text = _("An error has occurred")
+                self.print_error(f'{text}: {l[0]}')
             else:
-                self.print_simple_info('Лицензионный ключ успешно установлен')
+                text = _("License key successfully installed")
+                self.print_simple_info(text)
 
     def enter_container_name(self, widget, old_name):
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL,
-                                         text=f"Новое имя:")
-        dialogWindow.set_title("Имя контейнера")
-        dialogWindow.set_border_width(5)
-        dialogWindow.set_size_request(300, 100)
-        dialogWindow.set_resizable(True)
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
-        dialogBox = dialogWindow.get_content_area()
-        nameEntry = Gtk.Entry()
+        dialogWindow = temp_builder.get_object("enter_container_name")
+        nameEntry = temp_builder.get_object("nameEntry")
+        dialogWindow.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                 Gtk.STOCK_OK, Gtk.ResponseType.OK)
         nameEntry.set_text(f"{old_name}_copy")
-        dialogBox.pack_end(nameEntry, False, False, 0)
         dialogWindow.show_all()
         response = dialogWindow.run()
         container_name = nameEntry.get_text()
@@ -3227,21 +2887,15 @@ class InfoClass(Gtk.Window):
             return "canceled"
 
     def enter_cert_name(self, widget, old_name):
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL,
-                                         text=f"Новое имя:")
-        dialogWindow.set_title("Имя сертификата *.cer")
-        dialogWindow.set_border_width(5)
-        dialogWindow.set_size_request(300, 100)
-        dialogWindow.set_resizable(True)
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
-        dialogBox = dialogWindow.get_content_area()
-        nameEntry = Gtk.Entry()
+        dialogWindow = temp_builder.get_object("enter_cert_name")
+        nameEntry = temp_builder.get_object("nameCertEntry")
+        dialogWindow.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                 Gtk.STOCK_OK, Gtk.ResponseType.OK)
         nameEntry.set_text(f"{old_name}_cert")
-        dialogBox.pack_end(nameEntry, False, False, 0)
-        dialogWindow.show_all()
         response = dialogWindow.run()
         cert_name = nameEntry.get_text()
         dialogWindow.destroy()
@@ -3254,20 +2908,13 @@ class InfoClass(Gtk.Window):
             return "canceled"
 
     def open_root_certs(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Выберите файл(ы)", parent=self,
-                                       action=Gtk.FileChooserAction.OPEN,
-                                       )
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+        dialog = temp_builder.get_object("open_root_certs")
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                            Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-        filter = Gtk.FileFilter()
-        filter.set_name("Сертификаты *.cer *.crt")
-        filter.add_mime_type("Сертификаты")
-        filter.add_pattern("*.cer")
-        filter.add_pattern("*.CER")
-        filter.add_pattern("*.crt")
-        filter.add_pattern("*.CRT")
-        dialog.add_filter(filter)
-        dialog.set_select_multiple(True)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             file_names = dialog.get_filenames()
@@ -3278,10 +2925,9 @@ class InfoClass(Gtk.Window):
                 root = "uRoot"
             if not file_names:
                 return
-
             for file in file_names:
                 root_view = ViewCert()
-                root_view.set_model(Gtk.ListStore(str, Gdk.RGBA), True)
+                model = Gtk.ListStore(str, Gdk.RGBA)
                 root_info = install_root_cert(file, root)
 
                 for line in root_info:
@@ -3290,67 +2936,69 @@ class InfoClass(Gtk.Window):
                     color = Gdk.RGBA(red=0, green=0, blue=0, alpha=0)
                     if not_valid_after < datetime.utcnow():
                         color = Gdk.RGBA(red=252, green=133, blue=133, alpha=1)
+
+                    text1 = _("Issuer")
+                    text2 = _("Subject")
+                    text3 = _("Serial number")
+                    text5 = _("Not valid until")
+                    text6 = _("Not valid after")
+                    date1 = datetime.strftime(not_valid_before, '%d.%m.%Y %H:%M:%S')
+                    date2 = datetime.strftime(not_valid_after, '%d.%m.%Y %H:%M:%S')
                     if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
-                        item = 'Эмитент: %s\nСубъект: %s\nСерийный номер: %s\nSHA1 Отпечаток: %s\nНе действителен до: %s\n' \
-                               'Не действителен после: %s' % (line[1], line[2], line[3], line[4], \
-                                                              datetime.strftime(not_valid_before, '%d.%m.%Y %H:%M:%S'), \
-                                                              datetime.strftime(not_valid_after, '%d.%m.%Y %H:%M:%S'))
+                        text4 = _("SHA1 Fingerprint")
+                        item = f'{text1}: {line[1]}\n' \
+                               f'{text2}: {line[2]}\n' \
+                               f'{text3}: {line[3]}\n' \
+                               f'{text4}: {line[4]}\n' \
+                               f'{text5}: {date1}\n' \
+                               f'{text6}: {date2}'
                     else:
-                        item = 'Эмитент: %s\nСубъект: %s\nСерийный номер: %s\nХэш SHA1: %s\nНе действителен до: %s\n' \
-                               'Не действителен после: %s' % (line[1], line[2], line[3], line[4], \
-                                                              datetime.strftime(not_valid_before, '%d.%m.%Y %H:%M:%S'), \
-                                                              datetime.strftime(not_valid_after, '%d.%m.%Y %H:%M:%S'))
-                    root_view.cert_listview.append([item, color])
-                root_view.set_title("Установлен корневой сертификат")
-                root_view.connect("destroy", Gtk.main_quit)
-                root_view.show_all()
-                Gtk.main()
+                        text4 = _("SHA1 hash")
+                        item = f'{text1}: {line[1]}\n' \
+                               f'{text2}: {line[2]}\n' \
+                               f'{text3}: {line[3]}\n' \
+                               f'{text4}: {line[4]}\n' \
+                               f'{text5}: {date1}\n' \
+                               f'{text6}: {date2}'
+                    for it in item.split("\n"):
+                        model.append([it, color])
+                text1 = _("Root certificate installed")
+                text2 = _("Certificate")
+                root_view.viewcert_model(model, True, text1, text2)
         else:
             dialog.destroy()
 
     def delete_from_nonToken(self):
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL,
-                                         text="\nВы уверенны что хотите удалить данный сертификат?\n\n"
-                                              "Эту операцию нельзя отменить.")
-        dialogWindow.set_title("Подтверждение")
-        dialogBox = dialogWindow.get_content_area()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
+        dialogWindow = temp_builder.get_object("delete_from_nonToken")
         dialogWindow.show_all()
         response = dialogWindow.run()
-
         dialogWindow.destroy()
         return response
 
     def delete_from_Token(self):
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL,
-                                         text="\nВы уверенны что хотите удалить данный сертификат с ключевого носителя?\n\nЭту операцию нельзя отменить.")
-        dialogWindow.set_title("Подтверждение")
-        dialogBox = dialogWindow.get_content_area()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
+        dialogWindow = temp_builder.get_object("delete_from_Token")
         dialogWindow.show_all()
         response = dialogWindow.run()
-
         dialogWindow.destroy()
         return response
 
     def open_crl(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Выберите файл(ы)", parent=self,
-                                       action=Gtk.FileChooserAction.OPEN,
-                                       )
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+        dialog = temp_builder.get_object("open_crl")
+        dialog.set_size_request(800, 800)
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                            Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-        filter = Gtk.FileFilter()
-        filter.set_name("Сертификаты")
-        filter.add_mime_type("Сертификаты")
-        filter.add_pattern("*.crl")
-        dialog.add_filter(filter)
-        dialog.set_select_multiple(True)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             if self.ask_about_root(self) == Gtk.ResponseType.OK:
@@ -3362,7 +3010,7 @@ class InfoClass(Gtk.Window):
             if not file_names:
                 return
             crl_view = ViewCert()
-            crl_view.set_model(Gtk.ListStore(str, Gdk.RGBA), True)
+            model = Gtk.ListStore(str, Gdk.RGBA)
             for filename in file_names:
                 crl_info = install_crl(filename, root)
                 for line in crl_info:
@@ -3372,39 +3020,44 @@ class InfoClass(Gtk.Window):
                     color = Gdk.RGBA(red=0, green=0, blue=0, alpha=0)
                     if next_update < datetime.utcnow():
                         color = Gdk.RGBA(red=252, green=133, blue=133, alpha=1)
-                    item = ('%s\nДата выпуска: %s UTC\nДата обновления: %s UTC' %
-                            (line[1], datetime.strftime(this_update, '%d.%m.%Y %H:%M:%S'),
-                             datetime.strftime(next_update, '%d.%m.%Y %H:%M:%S')))
-                    crl_view.cert_listview.append([item, color])
-            crl_view.set_title("Установлен список отозванных сертификатов")
-            crl_view.connect("destroy", Gtk.main_quit)
-            crl_view.show_all()
-            Gtk.main()
+                    date1 = datetime.strftime(this_update, '%d.%m.%Y %H:%M:%S')
+                    date2 = datetime.strftime(next_update, '%d.%m.%Y %H:%M:%S')
+                    text1 = _("Date of issue")
+                    text2 = _("Update date")
+                    item = (f"{line[1]}\n{text1}: {date1} UTC\n{text2}: {date2} UTC")
+                    model.append([item, color])
+            text1 = _("CRLs installed")
+            text2 = _("Certificate")
+            crl_view.viewcert_model(model, True, text1, text2)
         else:
             dialog.destroy()
 
     def ask_about_root(self, widget):
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.NONE,
-                                         text="\nУстановить сертифиакт(ы) для локального пользователя\nили для всех сразу? (хранилище mRoot)")
-        dialogWindow.set_title("Вопрос")
-        dialogWindow.add_buttons("Локально", Gtk.ResponseType.CANCEL, "Для всех", Gtk.ResponseType.OK)
-        dialogWindow.show_all()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+        dialogWindow = temp_builder.get_object("ask_about_root")
         response = dialogWindow.run()
         dialogWindow.destroy()
         return response
 
     def ask_about_mmy(self, widget):
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.NONE,
-                                         text="\nУстановить сертифиакт(ы) для локального пользователя(хранилище uMy)\nили для всех сразу(хранилище mMy)?")
-        dialogWindow.set_title("Вопрос")
-        dialogWindow.add_buttons("Локально", Gtk.ResponseType.CANCEL, "Для всех", Gtk.ResponseType.OK)
-        dialogWindow.show_all()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+        dialogWindow = temp_builder.get_object("ask_about_mmy")
+        response = dialogWindow.run()
+        dialogWindow.destroy()
+        return response
+
+    def ask_about_extras(self, widget):
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+        dialogWindow = temp_builder.get_object("ask_about_extra_certs")
         response = dialogWindow.run()
         dialogWindow.destroy()
         return response
@@ -3412,17 +3065,13 @@ class InfoClass(Gtk.Window):
     def install_HDIMAGE(self, widget):
         find_hdimage = os.popen(f"/opt/cprocsp/sbin/{arch}/cpconfig -hardware reader -view | grep HDIMAGE").readlines()
         if not find_hdimage[0]:
-            dialogWindow = Gtk.MessageDialog(parent=self,
-                                             modal=True, destroy_with_parent=True,
-                                             message_type=Gtk.MessageType.QUESTION,
-                                             buttons=Gtk.ButtonsType.OK_CANCEL,
-                                             text="Введите пароль root пользователя")
-            dialogWindow.set_title("Создание HDIMAGE хранилища")
-            dialogBox = dialogWindow.get_content_area()
-            pinEntry = Gtk.Entry()
+            temp_builder = Gtk.Builder()
+            # temp_builder.add_from_file('../../data/ui/templates.glade')
+            temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+            dialogWindow = temp_builder.get_object("install_HDIMAGE")
+            pinEntry = temp_builder.get_object("pinEntry")
             pinEntry.set_visibility(False)
-            dialogBox.pack_end(pinEntry, False, False, 0)
-            dialogWindow.show_all()
             response = dialogWindow.run()
             if response == Gtk.ResponseType.OK:
                 pin = pinEntry.get_text()
@@ -3441,41 +3090,26 @@ class InfoClass(Gtk.Window):
         # команда из ТГ по экспортированияю контейнера попробовать выполнить автоинсталл,
         # в случае неудачи сделать по БЗ с явным указание открытого ключа
         self.liststore_all_containers = liststore
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL)
-        dialogWindow.set_title("Выберите контейнер")
-        dialogWindow.set_resizable(True)
-        dialogBox = dialogWindow.get_content_area()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
-        treeview = Gtk.TreeView(model=self.liststore_all_containers)
-        max_len = 0
-        for elem in self.liststore_all_containers:
-            if max_len < len(elem[0]):
-                max_len = len(elem[0])
+        dialogWindow = temp_builder.get_object("select_container_to_import_cert")
+        dialogWindow.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                 Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        treeview = temp_builder.get_object("select_container_to_import_cert_treeview")
+        treeview.set_model(self.liststore_all_containers)
         renderer_text = Gtk.CellRendererText()
-        column_text = Gtk.TreeViewColumn("Контейнеры", renderer_text, text=0)
+        col1_text = _("Containers")
+        column_text = Gtk.TreeViewColumn(col1_text, renderer_text, text=0)
         treeview.append_column(column_text)
-
         renderer_toggle = Gtk.CellRendererToggle()
         renderer_toggle.connect("toggled", self.on_cell_all_toggled)
-
-        column_toggle = Gtk.TreeViewColumn("Выбранный", renderer_toggle, active=1)
+        col2_text = _("Selected")
+        column_toggle = Gtk.TreeViewColumn(col2_text, renderer_toggle, active=1)
         treeview.append_column(column_toggle)
-
         sel = treeview.get_selection()
         sel.set_mode(Gtk.SelectionMode.NONE)
-        scrolled_tree = Gtk.ScrolledWindow()
-        scrolled_tree.add(treeview)
-        if max_len < 40:
-            dialogWindow.set_size_request(380, 200)
-            scrolled_tree.set_size_request(380, 200)
-        else:
-            dialogWindow.set_size_request(580, 200)
-            scrolled_tree.set_size_request(580, 200)
-        dialogBox.pack_end(scrolled_tree, True, True, 0)
-        dialogWindow.show_all()
         response = dialogWindow.run()
         dialogWindow.destroy()
         if (response == Gtk.ResponseType.CANCEL):
@@ -3488,41 +3122,24 @@ class InfoClass(Gtk.Window):
         # команда из ТГ по экспортированияю контейнера попробовать выполнить автоинсталл,
         # в случае неудачи сделать по БЗ с явным указание открытого ключа
         self.liststore_containers = liststore
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL)
-        dialogWindow.set_title("Выберите контейнер с токена")
-        dialogWindow.set_resizable(True)
-        dialogBox = dialogWindow.get_content_area()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
-        treeview = Gtk.TreeView(model=self.liststore_containers)
-        max_len = 0
-        for elem in self.liststore_containers:
-            if max_len < len(elem[0]):
-                max_len = len(elem[0])
+        dialogWindow = temp_builder.get_object("install_container_from_token")
+        dialogWindow.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                           Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        treeview = temp_builder.get_object("liststore_containers_treeview")
         renderer_text = Gtk.CellRendererText()
         column_text = Gtk.TreeViewColumn("Контейнеры", renderer_text, text=0)
         treeview.append_column(column_text)
-
         renderer_toggle = Gtk.CellRendererToggle()
         renderer_toggle.connect("toggled", self.on_cell_toggled)
-
         column_toggle = Gtk.TreeViewColumn("Выбранный", renderer_toggle, active=1)
         treeview.append_column(column_toggle)
-
+        treeview.set_model(self.liststore_containers)
         sel = treeview.get_selection()
         sel.set_mode(Gtk.SelectionMode.NONE)
-        scrolled_tree = Gtk.ScrolledWindow()
-        scrolled_tree.add(treeview)
-        if max_len < 40:
-            dialogWindow.set_size_request(380, 200)
-            scrolled_tree.set_size_request(380, 200)
-        else:
-            dialogWindow.set_size_request(580, 200)
-            scrolled_tree.set_size_request(580, 200)
-        dialogBox.pack_end(scrolled_tree, True, True, 0)
-        dialogWindow.show_all()
         response = dialogWindow.run()
         dialogWindow.destroy()
         if (response == Gtk.ResponseType.CANCEL):
@@ -3532,41 +3149,30 @@ class InfoClass(Gtk.Window):
 
     def choose_dest_stores(self, liststore):
         self.liststore_dest_stores = liststore
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL)
-        dialogWindow.set_title("Выберите 1 хранилище для экспортирования контейнера")
-        dialogWindow.set_resizable(True)
-        dialogBox = dialogWindow.get_content_area()
 
-        treeview = Gtk.TreeView(model=self.liststore_dest_stores)
-        max_len = 0
-        for elem in self.liststore_dest_stores:
-            if max_len < len(elem[0]):
-                max_len = len(elem[0])
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+        dialogWindow = temp_builder.get_object("choose_dest_stores")
+        dialogWindow.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                 Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        treeview = temp_builder.get_object("choose_dest_stores_treeview")
+
+        treeview.set_model(self.liststore_dest_stores)
         renderer_text = Gtk.CellRendererText()
-        column_text = Gtk.TreeViewColumn("Хранилища", renderer_text, text=0)
+        col1_text = _("Vaults")
+        column_text = Gtk.TreeViewColumn(col1_text, renderer_text, text=0)
         treeview.append_column(column_text)
 
         renderer_toggle = Gtk.CellRendererToggle()
         renderer_toggle.connect("toggled", self.on_cell_dest_toggled)
-
-        column_toggle = Gtk.TreeViewColumn("Выбранный", renderer_toggle, active=1)
+        col2_text = _("Selected")
+        column_toggle = Gtk.TreeViewColumn(col2_text, renderer_toggle, active=1)
         treeview.append_column(column_toggle)
 
         sel = treeview.get_selection()
         sel.set_mode(Gtk.SelectionMode.NONE)
-        scrolled_tree = Gtk.ScrolledWindow()
-        scrolled_tree.add(treeview)
-        if max_len < 40:
-            dialogWindow.set_size_request(380, 200)
-            scrolled_tree.set_size_request(380, 200)
-        else:
-            dialogWindow.set_size_request(580, 200)
-            scrolled_tree.set_size_request(580, 200)
-        dialogBox.pack_end(scrolled_tree, True, True, 0)
-        dialogWindow.show_all()
         response = dialogWindow.run()
         dialogWindow.destroy()
         if (response == Gtk.ResponseType.CANCEL):
@@ -3575,7 +3181,8 @@ class InfoClass(Gtk.Window):
             return True
 
     def choose_open_cert_to_close_container(self, container):
-        dialog = Gtk.FileChooserDialog(title="Выберите сертификат пользователя", parent=self,
+        text = _("Select user certificate")
+        dialog = Gtk.FileChooserDialog(title=text, parent=self,
                                        action=Gtk.FileChooserAction.OPEN,
                                        )
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -3614,63 +3221,66 @@ class InfoClass(Gtk.Window):
                         except IndexError:
                             pass
                         if CA_LIST_STR != "" or CDP_LIST_STR != "":
-                            self.print_simple_info(
-                                u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                            strk_out = []
-                            errors_ca = []
-                            success_ca = []
-                            errors_cdp = []
-                            success_cdp = []
-                            if CA_LIST_STR != "":
-
-                                for ca in CA_LIST_STR.split("\n"):
-                                    out = install_CA_extra(ca, "uRoot")
-                                    success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
-                                    time.sleep(2)
-                            if CDP_LIST_STR != "":
+                            if self.ask_about_extras(self) == Gtk.ResponseType.OK:
+                                strk_out = []
+                                errors_ca = []
+                                success_ca = []
+                                errors_cdp = []
+                                success_cdp = []
                                 if CA_LIST_STR != "":
-                                    strk_out += "\n"
 
-                                for cdp in CDP_LIST_STR.split("\n"):
-                                    out = install_CDP_extra(cdp, "uRoot")
-                                    success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
-                                    time.sleep(2)
-                            if len(success_ca) > 0:
-                                strk_out.append("Успешно установлены корневые сертификаты:")
-                                for succ in success_ca:
-                                    strk_out.append(f"{succ}")
+                                    for ca in CA_LIST_STR.split("\n"):
+                                        out = install_CA_extra(ca, "uRoot")
+                                        success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                        time.sleep(2)
+                                if CDP_LIST_STR != "":
+                                    if CA_LIST_STR != "":
+                                        strk_out += "\n"
 
-                            if len(success_cdp) > 0:
-                                strk_out.append("Успешно установлены сертификаты отзыва:")
-                                for succ in success_cdp:
-                                    strk_out.append(f"{succ}")
+                                    for cdp in CDP_LIST_STR.split("\n"):
+                                        out = install_CDP_extra(cdp, "uRoot")
+                                        success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                        time.sleep(2)
+                                if len(success_ca) > 0:
+                                    text = _("Successfully installed root certificates:")
+                                    strk_out.append(text)
+                                    for succ in success_ca:
+                                        strk_out.append(f"{succ}")
 
-                            if len(errors_ca) > 0:
-                                strk_out.append("Ошибка при установке корневых сертификатов:")
-                                for err in errors_ca:
-                                    strk_out.append(f"{err[0]}\n{err[1]}")
+                                if len(success_cdp) > 0:
+                                    text = _("Successfully installed CRLs:")
+                                    strk_out.append(text)
+                                    for succ in success_cdp:
+                                        strk_out.append(f"{succ}")
 
-                            if len(errors_cdp) > 0:
-                                if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
-                                    strk_out += "\n"
-                                strk_out.append("Ошибка при установке сертификатов отзыва:")
-                                for err in errors_cdp:
-                                    strk_out.append(f"{err[0]}\n{err[1]}")
+                                if len(errors_ca) > 0:
+                                    text = _("Error installing root certificates:")
+                                    strk_out.append(text)
+                                    for err in errors_ca:
+                                        strk_out.append(f"{err[0]}\n{err[1]}")
 
-                            view = ViewCertOutput()
-                            view.set_model(strk_out)
-                            view.connect("destroy", Gtk.main_quit)
-                            view.show_all()
-                            Gtk.main()
+                                if len(errors_cdp) > 0:
+                                    if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
+                                        strk_out += "\n"
+                                    text = _("Error installing CRLs:")
+                                    strk_out.append(text)
+                                    for err in errors_cdp:
+                                        strk_out.append(f"{err[0]}\n{err[1]}")
+
+                                view = ViewCertOutput()
+                                view.viewcertoutput_model(strk_out, "", "")
+                            os.system("rm -rf /tmp/token-manager/")
                         else:
-                            self.print_simple_info(u"Сертификат успешно установлен.")
+                            text = _("Certificate installed successfully")
+                            self.info_class.print_simple_info(text)
                         return [True]
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
             return [False, "Отменено пользователем"]
 
     def install_local_cert_to_container(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Выберите сертификат пользователя", parent=self,
+        text = _("Select user certificate")
+        dialog = Gtk.FileChooserDialog(title=text, parent=self,
                                        action=Gtk.FileChooserAction.OPEN,
                                        )
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
@@ -3710,8 +3320,8 @@ class InfoClass(Gtk.Window):
                                     selected += 1
                                     sel_cont = cont[0]
                             if selected > 1:
-                                self.print_error("Необходимо выбрать 1 контейнер\n"
-                                                         "для настройки связывания")
+                                text = _("You need to select 1 container\nto set up binding")
+                                self.print_error(text)
                             else:
                                 for cont in conts[0]:
                                     cont = cont.split("|")
@@ -3734,58 +3344,58 @@ class InfoClass(Gtk.Window):
                                     except IndexError:
                                         pass
                                     if CA_LIST_STR != "" or CDP_LIST_STR != "":
-                                        self.print_simple_info(
-                                            u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                                        strk_out = []
-                                        errors_ca = []
-                                        success_ca = []
-                                        errors_cdp = []
-                                        success_cdp = []
-                                        if CA_LIST_STR != "":
-
-                                            for ca in CA_LIST_STR.split("\n"):
-                                                out = install_CA_extra(ca)
-                                                success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
-                                                time.sleep(2)
-                                        if CDP_LIST_STR != "":
+                                        if self.ask_about_extras(self) == Gtk.ResponseType.OK:
+                                            strk_out = []
+                                            errors_ca = []
+                                            success_ca = []
+                                            errors_cdp = []
+                                            success_cdp = []
                                             if CA_LIST_STR != "":
-                                                strk_out += "\n"
 
-                                            for cdp in CDP_LIST_STR.split("\n"):
-                                                out = install_CDP_extra(cdp)
-                                                success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
-                                                time.sleep(2)
-                                        if len(success_ca) > 0:
-                                            strk_out.append("Успешно установлены корневые сертификаты:")
-                                            for succ in success_ca:
-                                                strk_out.append(f"{succ}")
+                                                for ca in CA_LIST_STR.split("\n"):
+                                                    out = install_CA_extra(ca)
+                                                    success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                                    time.sleep(2)
+                                            if CDP_LIST_STR != "":
+                                                if CA_LIST_STR != "":
+                                                    strk_out += "\n"
 
-                                        if len(success_cdp) > 0:
-                                            strk_out.append("Успешно установлены сертификаты отзыва:")
-                                            for succ in success_cdp:
-                                                strk_out.append(f"{succ}")
+                                                for cdp in CDP_LIST_STR.split("\n"):
+                                                    out = install_CDP_extra(cdp)
+                                                    success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                                    time.sleep(2)
+                                            if len(success_ca) > 0:
+                                                text = _("Successfully installed root certificates:")
+                                                strk_out.append(text)
+                                                for succ in success_ca:
+                                                    strk_out.append(f"{succ}")
 
-                                        if len(errors_ca) > 0:
-                                            strk_out.append("Ошибка при установке корневых сертификатов:")
-                                            for err in errors_ca:
-                                                strk_out.append(f"{err[0]}\n{err[1]}")
+                                            if len(success_cdp) > 0:
+                                                text = _("Successfully installed CRLs:")
+                                                strk_out.append(text)
+                                                for succ in success_cdp:
+                                                    strk_out.append(f"{succ}")
 
-                                        if len(errors_cdp) > 0:
-                                            strk_out.append("Ошибка при установке сертификатов отзыва:")
-                                            for err in errors_cdp:
-                                                strk_out.append(f"{err[0]}\n{err[1]}")
+                                            if len(errors_ca) > 0:
+                                                text = _("Error installing root certificates:")
+                                                strk_out.append(text)
+                                                for err in errors_ca:
+                                                    strk_out.append(f"{err[0]}\n{err[1]}")
 
-                                        view = ViewCertOutput()
-                                        view.set_model(strk_out)
-                                        view.connect("destroy", Gtk.main_quit)
-                                        view.show_all()
-                                        Gtk.main()
+                                            if len(errors_cdp) > 0:
+                                                text = _("Error installing CRLs:")
+                                                strk_out.append(text)
+                                                for err in errors_cdp:
+                                                    strk_out.append(f"{err[0]}\n{err[1]}")
+
+                                            view = ViewCertOutput()
+                                            view.viewcertoutput_model(strk_out, "", "")
+                                        os.system("rm -rf /tmp/token-manager/")
                                     else:
-                                        self.print_simple_info(
-                                            "Сертификат успешно связан с контейнером.")
+                                        text = _("The certificate was successfully associated with the container.")
+                                        self.print_simple_info(text)
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
-
 
     def install_cert_from_or_to_container(self, container, name_cont):
         # Требуется попробовать получить открытую часть хранилища автоматически, установленного локально в HDIMAGE
@@ -3816,65 +3426,65 @@ class InfoClass(Gtk.Window):
                     except IndexError:
                         pass
                     if CA_LIST_STR != "" or CDP_LIST_STR != "":
-                        self.print_simple_info(
-                            "Контейнер успешно скопирован\n"
-                            "и связан с сертификатом.\n"
-                            "Сейчас будут установлены дополнительные сертификаты.")
-                        strk_out = []
-                        errors_ca = []
-                        success_ca = []
-                        errors_cdp = []
-                        success_cdp = []
-                        if CA_LIST_STR != "":
-                            for ca in CA_LIST_STR.split("\n"):
-                                out = install_CA_extra(ca, "uRoot")
-                                success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
-                                time.sleep(2)
-                        if CDP_LIST_STR != "":
-                             for cdp in CDP_LIST_STR.split("\n"):
-                                out = install_CDP_extra(cdp, "uRoot")
-                                success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
-                                time.sleep(2)
-                        if len(success_ca) > 0:
-                            strk_out.append("Успешно установлены корневые сертификаты:")
-                            for succ in success_ca:
-                                strk_out.append(f"{succ}")
+                        if self.ask_about_extras(self) == Gtk.ResponseType.OK:
+                            strk_out = []
+                            errors_ca = []
+                            success_ca = []
+                            errors_cdp = []
+                            success_cdp = []
+                            if CA_LIST_STR != "":
+                                for ca in CA_LIST_STR.split("\n"):
+                                    out = install_CA_extra(ca, "uRoot")
+                                    success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                    time.sleep(2)
+                            if CDP_LIST_STR != "":
+                                 for cdp in CDP_LIST_STR.split("\n"):
+                                    out = install_CDP_extra(cdp, "uRoot")
+                                    success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                    time.sleep(2)
+                            if len(success_ca) > 0:
+                                text = _("Successfully installed root certificates:")
+                                strk_out.append(text)
+                                for succ in success_ca:
+                                    strk_out.append(f"{succ}")
 
-                        if len(success_cdp) > 0:
-                            strk_out.append("Успешно установлены сертификаты отзыва:")
-                            for succ in success_cdp:
-                                strk_out.append(f"{succ}")
+                            if len(success_cdp) > 0:
+                                text = _("Successfully installed CRLs:")
+                                strk_out.append(text)
+                                for succ in success_cdp:
+                                    strk_out.append(f"{succ}")
 
-                        if len(errors_ca) > 0:
-                            strk_out.append("Ошибка при установке корневых сертификатов:")
-                            for err in errors_ca:
-                                strk_out += f"{err[0]}\n{err[1]}\n"
+                            if len(errors_ca) > 0:
+                                text = _("Error installing root certificates:")
+                                strk_out.append(text)
+                                for err in errors_ca:
+                                    strk_out += f"{err[0]}\n{err[1]}\n"
 
-                        if len(errors_cdp) > 0:
-                            strk_out.append("Ошибка при установке сертификатов отзыва:")
-                            for err in errors_cdp:
-                                strk_out.append(f"{err[0]}\n{err[1]}")
+                            if len(errors_cdp) > 0:
+                                text = _("Error installing CRLs:")
+                                strk_out.append(text)
+                                for err in errors_cdp:
+                                    strk_out.append(f"{err[0]}\n{err[1]}")
 
-                        view = ViewCertOutput()
-                        view.set_model(strk_out)
-                        view.connect("destroy", Gtk.main_quit)
-                        view.show_all()
-                        Gtk.main()
+                            view = ViewCertOutput()
+                            view.viewcertoutput_model(strk_out, "", "")
+                        os.system("rm -rf /tmp/token-manager/")
                     else:
-                        self.info_class.print_simple_info(
-                            "Контейнер успешно скопирован\n"
-                            "и связан с сертификатом.")
+                        text = _("Container successfully copied\nand associated with the certificate.")
+                        self.info_class.print_simple_info(text)
                     return True
         # Вариант с открытой частью не удался, предлагаем пользователю самому выбрать сертификат для закрытой части.
         if not self.output_code_token:
-            dialog = Gtk.FileChooserDialog(title="Выберите сертификат пользователя", parent=self,
+            text = _("Select user certificate")
+            dialog = Gtk.FileChooserDialog(title=text, parent=self,
                                            action=Gtk.FileChooserAction.OPEN,
                                            )
             dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                                Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
             filter = Gtk.FileFilter()
-            filter.set_name("Сертификаты")
-            filter.add_mime_type("Сертификаты")
+            text = _("Certificates")
+            filter.set_name(f"{text}")
+            filter.add_mime_type(text)
             filter.add_pattern("*.cer")
             filter.add_pattern("*.CER")
             dialog.add_filter(filter)
@@ -3906,73 +3516,73 @@ class InfoClass(Gtk.Window):
                             except IndexError:
                                 pass
                             if CA_LIST_STR != "" or CDP_LIST_STR != "":
-                                self.print_simple_info(
-                                    u"Сертификат успешно установлен.\nСейчас будут установлены дополнительные сертификаты.")
-                                strk_out = []
-                                errors_ca = []
-                                success_ca = []
-                                errors_cdp = []
-                                success_cdp = []
-                                if CA_LIST_STR != "":
+                                if self.ask_about_extras(self) == Gtk.ResponseType.OK:
+                                    strk_out = []
+                                    errors_ca = []
+                                    success_ca = []
+                                    errors_cdp = []
+                                    success_cdp = []
+                                    if CA_LIST_STR != "":
 
-                                    for ca in CA_LIST_STR.split("\n"):
-                                        out = install_CA_extra(ca, "uRoot")
-                                        success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
-                                        time.sleep(2)
-                                if CDP_LIST_STR != "":
-                                    for cdp in CDP_LIST_STR.split("\n"):
-                                        out = install_CDP_extra(cdp, "uRoot")
-                                        success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
-                                        time.sleep(2)
-                                if len(success_ca) > 0:
-                                    strk_out += "Успешно установлены корневые сертификаты:\n"
-                                    for succ in success_ca:
-                                        strk_out.append(f"{succ}")
-
-                                if len(success_cdp) > 0:
+                                        for ca in CA_LIST_STR.split("\n"):
+                                            out = install_CA_extra(ca, "uRoot")
+                                            success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
+                                            time.sleep(2)
+                                    if CDP_LIST_STR != "":
+                                        for cdp in CDP_LIST_STR.split("\n"):
+                                            out = install_CDP_extra(cdp, "uRoot")
+                                            success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
+                                            time.sleep(2)
                                     if len(success_ca) > 0:
-                                        strk_out += "\n"
-                                    strk_out.append("Успешно установлены сертификаты отзыва:")
-                                    for succ in success_cdp:
-                                        strk_out.append(f"{succ}")
+                                        text = _("Successfully installed root certificates:")
+                                        strk_out += text
+                                        for succ in success_ca:
+                                            strk_out.append(f"{succ}")
 
-                                if len(errors_ca) > 0:
-                                    strk_out.append("Ошибка при установке корневых сертификатов:")
-                                    for err in errors_ca:
-                                        strk_out += f"{err[0]}\n{err[1]}\n"
+                                    if len(success_cdp) > 0:
+                                        if len(success_ca) > 0:
+                                            strk_out += "\n"
+                                        text = _("Successfully installed CRLs:")
+                                        strk_out.append(text)
+                                        for succ in success_cdp:
+                                            strk_out.append(f"{succ}")
+                                    if len(errors_ca) > 0:
+                                        text = _("Error installing root certificates:")
+                                        strk_out.append(text)
+                                        for err in errors_ca:
+                                            strk_out += f"{err[0]}\n{err[1]}\n"
 
-                                if len(errors_cdp) > 0:
-                                    if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
-                                        strk_out += "\n"
-                                    strk_out.append("Ошибка при установке сертификатов отзыва:")
-                                    for err in errors_cdp:
-                                        strk_out.append(f"{err[0]}\n{err[1]}")
+                                    if len(errors_cdp) > 0:
+                                        if len(success_ca) > 0 or len(success_cdp) > 0 or len(errors_ca) > 0:
+                                            strk_out += "\n"
+                                        text = _("Error installing CRLs:")
+                                        strk_out.append(text)
+                                        for err in errors_cdp:
+                                            strk_out.append(f"{err[0]}\n{err[1]}")
 
-                                view = ViewCertOutput()
-                                view.set_model(strk_out)
-                                view.connect("destroy", Gtk.main_quit)
-                                view.show_all()
-                                Gtk.main()
+                                    view = ViewCertOutput()
+                                    view.viewcertoutput_model(strk_out, "", "")
+                                os.system("rm -rf /tmp/token-manager/")
                             else:
-                                self.info_class.print_simple_info(
-                                    "Контейнер успешно скопирован\n"
-                                    "и связан с сертификатом.")
+                                text = _("Container successfully copied\nand associated with the certificate.")
+                                self.info_class.print_simple_info(text)
                             self.output_code_token = True
                             return True
             elif response == Gtk.ResponseType.CANCEL:
                 dialog.destroy()
                 self.output_code_token = False
                 return False
-
     def install_new_cert_to_container(self, container):
-        dialog = Gtk.FileChooserDialog(title="Выберите сертификат пользователя", parent=self,
+        text = _("Select user certificate")
+        dialog = Gtk.FileChooserDialog(title=text, parent=self,
                                        action=Gtk.FileChooserAction.OPEN,
                                        )
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                            Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         filter = Gtk.FileFilter()
-        filter.set_name("Сертификаты")
-        filter.add_mime_type("Сертификаты")
+        text = _("Certificates")
+        filter.set_name(f"{text}")
+        filter.add_mime_type(text)
         filter.add_pattern("*.cer")
         filter.add_pattern("*.CER")
         dialog.add_filter(filter)
@@ -4001,15 +3611,13 @@ class InfoClass(Gtk.Window):
             dialog.destroy()
             return "Отменено пользователем"
 
-    def return_output_code_token(self):
-        return self.output_code_token
-
     def choose_folder_dialog(self, widget):
-        dialog = Gtk.FileChooserDialog(title="Выберите директорию", parent=self,
+        text = _("Select directory")
+        dialog = Gtk.FileChooserDialog(title=text, parent=self,
                                        action=Gtk.FileChooserAction.SELECT_FOLDER,
                                        )
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                           "Выбрать директорию", Gtk.ResponseType.OK)
+                           text, Gtk.ResponseType.OK)
         dialog.set_default_size(800, 400)
         # если на ПК не обнаружен СН то стандартная папка по умолчанию /run/media/USERNAME, иначе будет другая папка
         # по дефолту - /media/
@@ -4027,46 +3635,31 @@ class InfoClass(Gtk.Window):
             return False
 
     def install_container_from_flash(self, liststore):
-        # сделать окно выбора контейнера из списка распознанных системой
-        # команда из ТГ по экспортированияю контейнера попробовать выполнить автоинсталл,
-        # в случае неудачи сделать по БЗ с явным указание открытого ключа
         self.liststore_flashes = liststore
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL)
-        dialogWindow.set_title("Выберите контейнер с usb-flash накопителя")
-        dialogWindow.set_resizable(True)
-        dialogBox = dialogWindow.get_content_area()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
-        treeview = Gtk.TreeView(model=self.liststore_flashes)
+        dialogWindow = temp_builder.get_object("install_container_from_flash")
+        dialogWindow.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                 Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        treeview = temp_builder.get_object("install_container_from_flash_treeview")
+
+        treeview.set_model(self.liststore_flashes)
 
         renderer_text = Gtk.CellRendererText()
-        column_text = Gtk.TreeViewColumn("Контейнеры", renderer_text, text=0)
+        col1_text = _("Containers")
+        column_text = Gtk.TreeViewColumn(col1_text, renderer_text, text=0)
         treeview.append_column(column_text)
 
         renderer_toggle = Gtk.CellRendererToggle()
         renderer_toggle.connect("toggled", self.on_cell_toggled_flash)
-        max_len = 0
-        for elem in self.liststore_flashes:
-            if max_len < len(elem[0]):
-                max_len = len(elem[0])
-        column_toggle = Gtk.TreeViewColumn("Выбранный", renderer_toggle, active=1)
+        col2_text = _("Selected")
+        column_toggle = Gtk.TreeViewColumn(col2_text, renderer_toggle, active=1)
         treeview.append_column(column_toggle)
 
         sel = treeview.get_selection()
         sel.set_mode(Gtk.SelectionMode.NONE)
-        scrolled_tree = Gtk.ScrolledWindow()
-        scrolled_tree.add(treeview)
-
-        if max_len < 40:
-            dialogWindow.set_size_request(380, 200)
-            scrolled_tree.set_size_request(380, 200)
-        else:
-            dialogWindow.set_size_request(580, 200)
-            scrolled_tree.set_size_request(580, 200)
-        dialogBox.pack_end(scrolled_tree, True, True, 0)
-        dialogWindow.show_all()
         response = dialogWindow.run()
         dialogWindow.destroy()
         if (response == Gtk.ResponseType.CANCEL):
@@ -4077,17 +3670,17 @@ class InfoClass(Gtk.Window):
     def call_secretnet_configs(self, for_what, udev):
         file = f"/etc/udev/rules.d/87-{udev}_usb.rules"
         if not os.path.exists(file):
-            dialogWindow = Gtk.MessageDialog(parent=self,
-                                             modal=True, destroy_with_parent=True,
-                                             message_type=Gtk.MessageType.QUESTION,
-                                             buttons=Gtk.ButtonsType.OK_CANCEL,
-                                             text="Введите пароль root пользователя, после применения\nпотребуется переподключить usb-flash накопитель")
-            dialogWindow.set_title(f"Настройка udev правила для {for_what}")
-            dialogBox = dialogWindow.get_content_area()
-            pinEntry = Gtk.Entry()
+            temp_builder = Gtk.Builder()
+            # temp_builder.add_from_file('../../data/ui/templates.glade')
+            temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
+
+            dialogWindow = temp_builder.get_object("call_secretnet_configs")
+            dialogWindow.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                     Gtk.STOCK_OK, Gtk.ResponseType.OK)
+            text = _("Configure udev rule for ")
+            dialogWindow.set_title(text+for_what)
+            pinEntry = temp_builder.get_object("call_secretnet_configs_entry")
             pinEntry.set_visibility(False)
-            dialogBox.pack_end(pinEntry, False, False, 0)
-            dialogWindow.show_all()
             response = dialogWindow.run()
             if response == Gtk.ResponseType.OK:
                 pin = pinEntry.get_text()
@@ -4105,108 +3698,34 @@ class InfoClass(Gtk.Window):
             return "installed"
 
     def install_container_from_hdimage(self, liststore):
-        # сделать окно выбора контейнера из списка распознанных системой
-        # команда из ТГ по экспортированияю контейнера попробовать выполнить автоинсталл,
-        # в случае неудачи сделать по БЗ с явным указание открытого ключа
         self.liststore_hdimage_containers = liststore
-        dialogWindow = Gtk.MessageDialog(parent=self,
-                                         modal=True, destroy_with_parent=True,
-                                         message_type=Gtk.MessageType.QUESTION,
-                                         buttons=Gtk.ButtonsType.OK_CANCEL)
-        dialogWindow.set_title("Выберите контейнер из hdimage")
-        dialogWindow.set_resizable(True)
-        dialogBox = dialogWindow.get_content_area()
+        temp_builder = Gtk.Builder()
+        # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
-        treeview = Gtk.TreeView(model=self.liststore_hdimage_containers)
-        max_len = 0
-        for elem in self.liststore_hdimage_containers:
-            if max_len < len(elem[0]):
-                max_len = len(elem[0])
+        dialogWindow = temp_builder.get_object("install_container_from_hdimage")
+        dialogWindow.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                 Gtk.STOCK_OK, Gtk.ResponseType.OK)
+        treeview = temp_builder.get_object("install_container_from_hdimage_treeview")
         renderer_text = Gtk.CellRendererText()
-        column_text = Gtk.TreeViewColumn("Контейнеры", renderer_text, text=0)
+        col1_text = _("Containers")
+        column_text = Gtk.TreeViewColumn(col1_text, renderer_text, text=0)
         treeview.append_column(column_text)
-
         renderer_toggle = Gtk.CellRendererToggle()
         renderer_toggle.connect("toggled", self.on_cell_hdimage_toggled)
-
-        column_toggle = Gtk.TreeViewColumn("Выбранный", renderer_toggle, active=1)
+        col2_text = _("Selected")
+        column_toggle = Gtk.TreeViewColumn(col2_text, renderer_toggle, active=1)
         treeview.append_column(column_toggle)
+        treeview.set_model(self.liststore_hdimage_containers)
 
         sel = treeview.get_selection()
         sel.set_mode(Gtk.SelectionMode.NONE)
-        scrolled_tree = Gtk.ScrolledWindow()
-        scrolled_tree.add(treeview)
-        if max_len < 40:
-            dialogWindow.set_size_request(380, 200)
-            scrolled_tree.set_size_request(380, 200)
-        else:
-            dialogWindow.set_size_request(580, 200)
-            scrolled_tree.set_size_request(580, 200)
-        dialogBox.pack_end(scrolled_tree, True, True, 0)
-        dialogWindow.show_all()
         response = dialogWindow.run()
         dialogWindow.destroy()
         if (response == Gtk.ResponseType.CANCEL):
             return False
         else:
             return True
-
-    def install_cert_from_or_to_usb_flash(self, container):
-        # Требуется попробовать получить открытую часть хранилища автоматически, установленного локально в HDIMAGE
-        self.output_code_flash = False
-        csptest = subprocess.Popen(['/opt/cprocsp/bin/%s/csptest' % arch, '-keyset', '-enum_cont', '-unique', '-fqcn',
-                                    '-verifyc'], stdout=subprocess.PIPE)
-        output = csptest.communicate()[0].decode('cp1251').encode('utf-8').decode("utf-8")
-        certs = []
-        for line in output.split("\n"):
-            if "HDIMAGE" in line and container in line:
-                certs.append(line)
-        for cert in certs:
-            cert = cert.split("|")[1].strip()
-            output = os.popen(f"/opt/cprocsp/bin/{arch}/certmgr -inst -store uMy -cont '{cert}'").readlines()
-            for l in output:
-                if "[ErrorCode: 0x00000000]\n" in l:
-                    self.output_code_flash = True
-                    return True
-        # Вариант с открытой частью не удался, предлагаем пользователю самому выбрать сертификат для закрытой части.
-        if not self.output_code_flash:
-            dialog = Gtk.FileChooserDialog(title="Выберите сертификат пользователя", parent=self,
-                                           action=Gtk.FileChooserAction.OPEN,
-                                           )
-            dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                               Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
-            filter = Gtk.FileFilter()
-            filter.set_name("Сертификаты")
-            filter.add_mime_type("Сертификаты")
-            filter.add_pattern("*.cer")
-            filter.add_pattern("*.CER")
-            dialog.add_filter(filter)
-            domain_name = os.popen("echo $USERNAME").readlines()[0]
-            if "\\" in domain_name:
-                domain_name = domain_name.split("\\")[1]
-            elif "@" in domain_name:
-                domain_name = domain_name.split("@")[0]
-            find_name = os.popen(f"find /home/ -maxdepth 2 -name *{domain_name}*").readlines()[0].strip()
-            dialog.set_current_folder(f"'{find_name}'")
-            dialog.set_select_multiple(False)
-            response = dialog.run()
-            if response == Gtk.ResponseType.OK:
-                file_name = dialog.get_filename()
-                dialog.destroy()
-                cert = certs[0].split("|")[1].strip()
-                if file_name:
-                    output = os.popen(
-                        f"/opt/cprocsp/bin/{arch}/certmgr -inst -store uMy -file '{file_name}' -cont '{cert}'").readlines()
-                    for l in output:
-                        if "[ErrorCode: 0x00000000]\n" in l:
-                            self.output_code_flash = True
-                            return True
-            elif response == Gtk.ResponseType.CANCEL:
-                self.output_code_flash = False
-                return False
-
-    def return_output_code_flash(self):
-        return self.output_code_flash
 
     def return_liststore_containers(self):
         return self.liststore_containers
@@ -4238,33 +3757,17 @@ class InfoClass(Gtk.Window):
     def on_cell_toggled_flash(self, widget, path):
         self.liststore_flashes[path][1] = not self.liststore_flashes[path][1]
 
-
 def main():
-    window = Gtk.ApplicationWindow()
-    window.set_title(re.sub("\n", "", module_name()))
-    window.set_position(Gtk.WindowPosition.CENTER)
-    window.set_default_icon_name('token-manager')
-    containerr = Gtk.Notebook()
-    containerr.set_show_tabs(False)
-    paned = Gtk.Paned()
-    paned.add2(containerr)
-    main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    main_box.pack_start(paned, True, True, 0)
-    combox = TokenUI(main_box, True)
-    containerr.append_page(combox)
-    window.add(main_box)
-    window.connect("destroy", Gtk.main_quit)
-    window.show_all()
+    screen = Gdk.Screen.get_default()
+    provider = Gtk.CssProvider()
+    provider.load_from_path(f"{appdir}/usr/share/token_manager/ui/style.css") if appdir else  provider.load_from_path("/usr/share/token_manager/ui/style.css")
+    # provider.load_from_path("../../data/ui/style.css")
+
+    Gtk.StyleContext.add_provider_for_screen(screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+    class_win = TokenUI()
+    class_win.window.connect("destroy", Gtk.main_quit)
     Gtk.main()
-
-
-def module_name():
-    return f"Ключевые носители и сертификаты ({arch})"
-
-
-def module_icon():
-    return "token-manager.resized.png"
 
 if __name__ == "__main__":
     window = main()
-

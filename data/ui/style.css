@@ -1,0 +1,233 @@
+.GtkButton {
+  border-radius: 8px;
+    min-height: 20px;
+    font-size: 13px;font-family: sans-serif;
+}
+
+.GtkButtonAccept {
+}
+
+.GtkButtonDeny {
+}
+
+.GtkButton:hover {
+    background-clip: padding-box;
+    /*-gtk-icon-shadow: 0 1px black;*/
+
+}
+
+.GtkButtonTitle {
+  border-radius: 8px;
+  background-clip: padding-box;
+
+
+    min-height: 8px;
+}
+
+.GtkButtonTitle:hover {
+
+    min-height: 8px;
+
+    background-clip: padding-box;
+
+}
+
+.GroupLabelRow {
+
+  border-radius: 8px;
+    min-height: 14px;
+}
+
+
+
+
+.GroupLabelRowButton {
+
+      padding: 3px 16px;
+  border-radius: 8px;
+    min-height: 10px;
+    min-width: 10px;
+
+}
+
+.GroupLabelRowButton:hover {
+
+  border-radius: 8px;
+    min-height: 10px;
+    min-width: 10px;
+
+    background-clip: padding-box;
+
+    /*-gtk-icon-shadow: 0 1px black;*/
+}
+
+
+.GtkListBoxandRow {
+    border-radius: 8px;
+}
+
+.GtkListBoxandRowAlone {
+ border: 1px groove whitesmoke;
+    border-radius: 8px;
+}
+
+
+.GtkListSubGroups {
+    border-bottom-left-radius: 8px;
+}
+
+.ImageSubGroups {
+border-bottom-left-radius: 8px;
+    /*border-bottom-right-radius: 8px;*/
+}
+
+.GtkListForIcon {
+    border-bottom-left-radius: 8px;
+    /*border-bottom-right-radius: 8px;*/
+}
+
+.GtkListAppBox{
+    /*background-color: #EFFAFF;*/
+  border-radius: 8px;
+    border-width: 3px;
+    border-style: groove;
+}
+
+.GtkImageBox{
+  background-color: transparent;
+}
+
+.GtkLabel{
+    min-height: 8px;
+}
+.AppLabel{
+
+    font-weight: bold;
+    font-size: 14px;
+    font-family: sans-serif;
+
+    /*background-color: whitesmoke;*/
+    /*background-image: image(rgba(245, 245, 245, 1));*/
+}
+
+.AppLabel{
+    font-weight: bold;
+    font-size: 14px;
+    font-family: sans-serif;
+}
+
+.AppLabelDesc{
+    font-size: 14px;
+    font-family: sans-serif;
+}
+
+.Window{
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.WindowLoad{
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.GtkEntry{
+
+}
+
+
+scrollbar {
+  transition: 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+entry {
+    border-radius: 16px;
+}
+
+AppBox {
+    background-color: #f3f3f3;
+}
+
+.TreeView,
+.TreeView text {
+
+    font-weight: bold;
+    font-size: 14px;
+    color: black;
+    font-family: sans-serif;
+}
+
+.TreeViewBot,
+.TreeViewBot text {
+
+    text-decoration-color: #ffffff;
+
+    font-weight: bold;
+    font-size: 14px;
+    font-family: sans-serif;
+
+}
+
+.AppButton{
+    /*background-color: #EFFAFF;*/
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+.AppButtonTop {
+  border-radius: 16px;
+}
+
+spinner {
+}
+
+.InicializeBox{
+    /*background-color: #EFFAFF;*/
+  border-radius: 8px;
+    border-color: #ffb0b0;
+    border-width: 6px;
+    border-style: groove;
+}
+
+.InicializeLabel{
+    font-weight: bold;
+    font-size: 18px;
+    font-family: sans-serif;
+}
+
+combobox > .linked:not(.vertical) > button:not(:only-child),
+combobox > .linked:not(.vertical) > button:drop(active):not(:only-child),
+combobox > .linked:not(.vertical) > button:hover:not(:only-child),
+combobox > .linked:not(.vertical) > button:focus:not(:only-child),
+combobox > .linked:not(.vertical) > button:active:not(:only-child),
+combobox > .linked:not(.vertical) > button:disabled:not(:only-child),
+combobox > .linked:not(.vertical) > button:checked:not(:only-child),
+combobox > box > button.combo,
+combobox > box > button.combo > box,
+combobox > box > button.combo > box > cellview,
+combobox > box > button.combo > box > cellview:hover,
+combobox > box > button.combo:dir(ltr),
+combobox > box > button.combo:dir(rtl),
+combobox:first-child > box > button.combo,
+combobox:last-child > box > button.combo,
+combobox.linked button:nth-child(2):dir(rtl),
+combobox.linked button:nth-child(2):dir(ltr),
+combobox:only-child > box > button.combo
+{
+
+}
+
+Image{
+   border-radius: 16px;
+}
+
+Menu{
+  border-radius: 16px;
+}
+
+
+
+
+
+
