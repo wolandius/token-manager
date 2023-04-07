@@ -3,7 +3,7 @@
 #
 
 Name:           token-manager
-Version:        5.0
+Version:        5.1
 Release:        1%{dist}.2
 
 BuildArch:      noarch
@@ -89,6 +89,9 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Fri Apr 07 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:5.1-1
+- improved certs parse logic in select_token function
+
 * Fri Mar 31 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:5.0-1
 - added UI files
 - added translate files

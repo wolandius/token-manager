@@ -53,7 +53,7 @@ from datetime import datetime
 
 from pathlib import Path
 
-VERSION = "5.0"
+VERSION = "5.1"
 
 GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
 appdir = os.popen("echo $APPDIR").readline().strip()
@@ -1573,6 +1573,8 @@ class TokenUI:
             filename="/usr/share/icons/hicolor/128x128/apps/token-manager.png"
         )
         about.set_logo(pixbuf)
+        crypto_text = _("CryptoPRO version")
+        temp_builder.get_object("about_crypto_label").set_text(f"{crypto_text}: {get_cspversion()[2]}")
         response = about.run()
         about.destroy()
 
@@ -1624,18 +1626,15 @@ class TokenUI:
                     if datetime.strptime(cert[6], '%d/%m/%Y  %H:%M:%S ') < datetime.utcnow():
                         color = Gdk.RGBA(red=252, green=133, blue=133, alpha=0.1)
                     try:
-                        cert_subject_cn = dict(re.findall(
-                            '([A-Za-z0-9\.]+?)=([\xab\xbb\(\)\w \.\,0-9@\-\#\/\"\/\']+|\"(?:\\.|[^\"])*\")(?:, |$)',
-                            cert[2], re.UNICODE))
+                        cert_subject_cn = self.create_dict_from_strk(cert[2])
                         cert_subject_cn = cert_subject_cn['CN'] if 'CN' in cert_subject_cn else ""
-                        cert_subject_o = dict(re.findall(
-                            '([A-Za-z0-9\.]+?)=([\xab\xbb\(\)\w \.\,0-9@\-\#\/\"\/\']+|\"(?:\\.|[^\"])*\")(?:, |$)',
-                            cert[2], re.UNICODE))
+
+                        cert_subject_o = self.create_dict_from_strk(cert[2])
                         cert_subject_o = cert_subject_o['O'] if 'O' in cert_subject_o else cert_subject_o['CN']
-                        cert_issuer_cn = dict(re.findall(
-                            '([A-Za-z0-9\.]+?)=([\xab\xbb\(\)\w \.\,0-9@\-\#\/\"\/\']+|\"(?:\\.|[^\"])*\")(?:, |$)',
-                            cert[1], re.UNICODE))
+
+                        cert_issuer_cn = self.create_dict_from_strk(cert[2])
                         cert_issuer_cn = cert_issuer_cn['CN'] if 'CN' in cert_issuer_cn else ""
+
                         text1 = _("issued")
                         text2 = _("organization")
                         cert_item = "%s\n%s %s\n%s %s" % (cert_subject_cn, text1, cert_issuer_cn, text2, cert_subject_o)
@@ -1646,6 +1645,19 @@ class TokenUI:
                     except KeyError as e:
                         print(f" Couldn't parse {e}")
         return True
+
+    def create_dict_from_strk(self, strk):
+        strk_keys = re.findall("([A-Za-z0-9\.]+?)=", strk.strip())
+
+        strk_list = re.split("([A-Za-z0-9\.]+?)=", strk.strip())[1:]
+        new_dict = {}
+        counter_keys = 0
+        strk_list = strk_list[1::2]
+        for i in range(0, len(strk_list)):
+            temp_str = strk_list[i].strip()
+            new_dict[strk_keys[counter_keys]] = temp_str[:-1] if "," == temp_str[-1] else temp_str
+            counter_keys += 1
+        return new_dict
 
     def write_cert(self, widget):
         win = InfoClass()
@@ -2775,7 +2787,6 @@ class InfoClass(Gtk.Window):
             file_name = dialog.get_filename()
             dialog.destroy()
             if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.0"):
-                print(versiontuple(get_cspversion()[2]))
                 if self.ask_about_mmy(self) == Gtk.ResponseType.OK:
                     store = "mMy"
                 else:

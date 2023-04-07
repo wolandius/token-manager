@@ -1,3 +1,6 @@
+v5.1 Apr 07 2023
+- improved certs parse logic in select_token function
+
 v5.0 Mar 31 2023
 - added UI files
 - added translate files

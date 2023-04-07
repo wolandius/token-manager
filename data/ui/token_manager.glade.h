@@ -1,7 +1,3 @@
-char *s = N_("Copyright (c) 2017 Boris Makarenko\n"
-             "Copyright (c) 2020-2023 Vladlen Murylev\n"
-             "");
-char *s = N_("Github");
 char *s = N_("Install root certificates");
 char *s = N_("Install CRLs");
 char *s = N_("Write a certificate to a container");

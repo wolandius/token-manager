@@ -13,14 +13,12 @@ Copyright (c) 2020-2023 Vladlen Murylev
 </property>
     <property name="website">https://github.com/wolandius/token-manager</property>
     <property name="website-label" translatable="yes">Github</property>
-    <property name="license" translatable="yes">Это приложение распространяется без каких-либо гарантий.
-Подробнее в &lt;a href="https://opensource.org/licenses/mit-license.php"&gt;The MIT License (MIT)&lt;/a&gt;.</property>
     <property name="logo-icon-name">image-missing</property>
-    <property name="wrap-license">True</property>
     <property name="license-type">mit-x11</property>
     <child internal-child="vbox">
       <object class="GtkBox">
         <property name="can-focus">False</property>
+        <property name="orientation">vertical</property>
         <child internal-child="action_area">
           <object class="GtkButtonBox">
             <property name="can-focus">False</property>
@@ -29,6 +27,20 @@ Copyright (c) 2020-2023 Vladlen Murylev
             <property name="expand">False</property>
             <property name="fill">False</property>
             <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="about_crypto_label">
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <attributes>
+              <attribute name="font-desc" value="Sans Bold 9"/>
+            </attributes>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
           </packing>
         </child>
       </object>
@@ -337,9 +349,6 @@ you will need to reconnect the usb-flash drive</property>
           </packing>
         </child>
       </object>
-    </child>
-    <child type="titlebar">
-      <placeholder/>
     </child>
   </object>
   <object class="GtkFileFilter" id="crlfilter">

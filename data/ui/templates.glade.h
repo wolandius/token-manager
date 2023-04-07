@@ -1,3 +1,7 @@
+char *s = N_("Copyright (c) 2017 Boris Makarenko\n"
+             "Copyright (c) 2020-2023 Vladlen Murylev\n"
+             "");
+char *s = N_("Github");
 char *s = N_("Confirmation");
 char *s = N_("The certificate has been successfully installed.");
 char *s = N_("Would you like to install the required additional certificates?");
@@ -9,7 +13,6 @@ char *s = N_("Install certificate(s) for local user or for all at once? (mRoot s
 char *s = N_("Type PIN-code");
 char *s = N_("Enter the password of the root user, after applying\n"
              "you will need to reconnect the usb-flash drive");
-char *s = N_("Select 1 storage to export container");
 char *s = N_("Select file(s)");
 char *s = N_("Are you sure you want to remove this certificate from the key carrier? This operation cannot be undone.");
 char *s = N_("Are you sure you want to delete this certificate? This operation cannot be undone.");
