@@ -3,7 +3,7 @@
 
 """
 Copyright (c) 2017 Борис Макаренко
-Copyright (c) 2020-2022 Владлен Мурылев
+Copyright (c) 2020-2023 Владлен Мурылев
 
 Данная лицензия разрешает лицам, получившим копию данного программного обеспечения и сопутствующей документации
 (в дальнейшем именуемыми «Программное Обеспечение»), безвозмездно использовать Программное Обеспечение без ограничений,
@@ -21,7 +21,7 @@ Copyright (c) 2020-2022 Владлен Мурылев
 ПРОГРАММНОГО ОБЕСПЕЧЕНИЯ ИЛИ ИНЫХ ДЕЙСТВИЙ С ПРОГРАММНЫМ ОБЕСПЕЧЕНИЕМ..
 
 Copyright (c) 2017 Boris Makarenko
-Copyright (c) 2020-2022 Vladlen Murylev
+Copyright (c) 2020-2023 Vladlen Murylev
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -43,28 +43,29 @@ THE SOFTWARE.
 """
 import gettext
 import os, gi, re, subprocess, platform, sys, webbrowser
-import time
-
-import chardet
+import time, locale
 
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from datetime import datetime
 
-from pathlib import Path
-
-VERSION = "5.1"
+VERSION = "5.2"
 
 GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
 appdir = os.popen("echo $APPDIR").readline().strip()
 
+APP='token_manager'
+LOCALE_DIR=f"{appdir}/usr/share/locale/" if appdir else "/usr/share/locale/"
+locale.setlocale(locale.LC_ALL, '')
+locale.bindtextdomain(APP, LOCALE_DIR)
+gettext.bindtextdomain(APP, LOCALE_DIR)
+gettext.textdomain(APP)
+_ = gettext.gettext
 
-t = gettext.translation('token_manager', f"{appdir}/usr/share/locale/") if appdir else gettext.translation('token_manager', "/usr/share/locale/")
-# t = gettext.translation('token_manager', "../../data/locale/")
-t.install()
-_ = t.gettext
 
 builder = Gtk.Builder()
+builder.set_translation_domain(APP)
+
 # builder.add_from_file('../../data/ui/token_manager.glade')
 builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/token_manager.glade') if appdir else builder.add_from_file('/usr/share/token_manager/ui/token_manager.glade')
 
@@ -2557,6 +2558,7 @@ class ListCert(Gtk.Window):
 
         temp_builder = Gtk.Builder()
         # temp_builder.add_from_file('../../data/ui/templates.glade')
+        temp_builder.set_translation_domain('token_manager')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
         dialog = temp_builder.get_object("listcert_model")
         dialog.set_title(title)
@@ -2649,6 +2651,8 @@ class ViewCert(Gtk.Window):
         Gtk.Window.__init__(self)
     def viewcert_model(self, model, with_color, title, column):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
+
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2672,6 +2676,7 @@ class ViewCertOutput(Gtk.Window):
 
     def viewcertoutput_model(self, info, title, column):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2696,6 +2701,7 @@ class InfoClass(Gtk.Window):
 
     def print_info(self, info, widtn, heigth):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2718,6 +2724,7 @@ class InfoClass(Gtk.Window):
         self.liststore = Gtk.ListStore(str)
         self.liststore.append([info])
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2736,6 +2743,7 @@ class InfoClass(Gtk.Window):
 
     def print_simple_info(self, info):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2746,6 +2754,7 @@ class InfoClass(Gtk.Window):
 
     def print_error(self, error):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2756,6 +2765,7 @@ class InfoClass(Gtk.Window):
 
     def cache_pin(self):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2856,6 +2866,7 @@ class InfoClass(Gtk.Window):
 
     def enter_license(self, widget):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2877,6 +2888,7 @@ class InfoClass(Gtk.Window):
 
     def enter_container_name(self, widget, old_name):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2899,6 +2911,7 @@ class InfoClass(Gtk.Window):
 
     def enter_cert_name(self, widget, old_name):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2920,6 +2933,7 @@ class InfoClass(Gtk.Window):
 
     def open_root_certs(self, widget):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2981,6 +2995,7 @@ class InfoClass(Gtk.Window):
 
     def delete_from_nonToken(self):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -2992,6 +3007,7 @@ class InfoClass(Gtk.Window):
 
     def delete_from_Token(self):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3003,6 +3019,7 @@ class InfoClass(Gtk.Window):
 
     def open_crl(self, widget):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3045,6 +3062,7 @@ class InfoClass(Gtk.Window):
 
     def ask_about_root(self, widget):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3055,6 +3073,7 @@ class InfoClass(Gtk.Window):
 
     def ask_about_mmy(self, widget):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3065,6 +3084,7 @@ class InfoClass(Gtk.Window):
 
     def ask_about_extras(self, widget):
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3077,6 +3097,7 @@ class InfoClass(Gtk.Window):
         find_hdimage = os.popen(f"/opt/cprocsp/sbin/{arch}/cpconfig -hardware reader -view | grep HDIMAGE").readlines()
         if not find_hdimage[0]:
             temp_builder = Gtk.Builder()
+            temp_builder.set_translation_domain('token_manager')
             # temp_builder.add_from_file('../../data/ui/templates.glade')
             temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3102,6 +3123,7 @@ class InfoClass(Gtk.Window):
         # в случае неудачи сделать по БЗ с явным указание открытого ключа
         self.liststore_all_containers = liststore
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3134,6 +3156,7 @@ class InfoClass(Gtk.Window):
         # в случае неудачи сделать по БЗ с явным указание открытого ключа
         self.liststore_containers = liststore
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3162,6 +3185,7 @@ class InfoClass(Gtk.Window):
         self.liststore_dest_stores = liststore
 
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3648,6 +3672,7 @@ class InfoClass(Gtk.Window):
     def install_container_from_flash(self, liststore):
         self.liststore_flashes = liststore
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3682,6 +3707,7 @@ class InfoClass(Gtk.Window):
         file = f"/etc/udev/rules.d/87-{udev}_usb.rules"
         if not os.path.exists(file):
             temp_builder = Gtk.Builder()
+            temp_builder.set_translation_domain('token_manager')
             # temp_builder.add_from_file('../../data/ui/templates.glade')
             temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
@@ -3711,6 +3737,7 @@ class InfoClass(Gtk.Window):
     def install_container_from_hdimage(self, liststore):
         self.liststore_hdimage_containers = liststore
         temp_builder = Gtk.Builder()
+        temp_builder.set_translation_domain('token_manager')
         # temp_builder.add_from_file('../../data/ui/templates.glade')
         temp_builder.add_from_file(f'{appdir}/usr/share/token_manager/ui/templates.glade') if appdir else temp_builder.add_from_file('/usr/share/token_manager/ui/templates.glade')
 
