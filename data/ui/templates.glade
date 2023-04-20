@@ -7,7 +7,7 @@
     <property name="window-position">center</property>
     <property name="type-hint">tooltip</property>
     <property name="program-name">TokenManager</property>
-    <property name="version">5.1</property>
+    <property name="version">5.2</property>
     <property name="copyright" translatable="yes">Copyright (c) 2017 Boris Makarenko
 Copyright (c) 2020-2023 Vladlen Murylev
 </property>

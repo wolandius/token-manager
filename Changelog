@@ -1,3 +1,7 @@
+v5.2 Apr 20 2023
+- replace regex parse in certs view with new dictionary funcs
+- added full support for languages in appimage mode
+
 v5.1 Apr 07 2023
 - improved certs parse logic in select_token function
 

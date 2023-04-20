@@ -528,31 +528,17 @@ def inst_cert_from_file(filepath, store):
     return u"Сертификат успешно установлен"
 
 def get_UC_CDP(output):
-    if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
-        regex_string_CA = r'^URL сертификата УЦ.*?: http.*\.crt\n|URL сертификата УЦ.*?: http.*\.cer'
-        regex_string_CDP = r'^URL списка отзыва.*?: http.*\.crl\n'
-        resub_string_CA = r'URL сертификата УЦ.*?: '
-        resub_string_CDP = r'URL списка отзыва.*?: '
-    elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
-        regex_string_CA = r'^URL сертификата УЦ.*?: http.*\.crt\n|URL сертификата УЦ.*?: http.*\.cer'
-        regex_string_CDP = r'^URL списка отзыва.*?: http.*\.crl\n'
-        resub_string_CA = r'URL сертификата УЦ.*?: '
-        resub_string_CDP = r'URL списка отзыва.*?: '
-    elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
-        regex_string_CA = r'^CA cert URL.*?: http.*\.crt\n|URL сертификата УЦ.*?: http.*\.cer'
-        regex_string_CDP = r'^CDP.*?: http.*\.crl\n'
-        resub_string_CA = r'CA cert URL.*?: '
-        resub_string_CDP = r'CDP.*?: '
-    elif versiontuple("4.0.9971") <= versiontuple(get_cspversion()[2]) < versiontuple("5.0.10003"):
-        regex_string_CA = r'^URL сертификата УЦ.*?: http.*\.crt\n|URL сертификата УЦ.*?: http.*\.cer'
-        regex_string_CDP = r'^URL списка отзыва.*?: http.*\.crl\n'
-        resub_string_CA = r'URL сертификата УЦ.*?: '
-        resub_string_CDP = r'URL списка отзыва.*?: '
-    else:
-        regex_string_CA = r'^CA cert URL.*?: http.*\.crt\n|URL сертификата УЦ.*?: http.*\.cer'
-        regex_string_CDP = r'^CDP.*?: http.*\.crl\n'
-        resub_string_CA = r'CA cert URL.*?: '
-        resub_string_CDP = r'CDP.*?: '
+    regex_string_CA = r'^URL сертификата УЦ.*?: http.*\.crt\n|' \
+                      r'URL сертификата УЦ.*?: http.*\.cer|' \
+                      r'^CA cert URL.*?: http.*\.crt\n|' \
+                      r'URL сертификата УЦ.*?: http.*\.cer'
+    regex_string_CDP = r'^URL списка отзыва.*?: http.*\.crl\n|' \
+                       r'^CDP.*?: http.*\.crl\n'
+    resub_string_CA = r'URL сертификата УЦ.*?: |' \
+                      r'CA cert URL.*?: '
+    resub_string_CDP = r'URL списка отзыва.*?: |' \
+                       r'CDP.*?: '
+
     certs_UC_str = ""
     certs_UC = re.findall(regex_string_CA, output, re.MULTILINE + re.DOTALL)
     if len(certs_UC) > 0:
@@ -596,61 +582,30 @@ def get_store_certs(store):
         certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-store', 'uRoot'],
                                    stdout=subprocess.PIPE)
         output = certmgr.communicate()[0].decode("utf-8")
-        if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
-            m = re.findall(
-                r'(\d+)-{7}\n'
-                r'Издатель.*?: (.+?)\n.*?'
-                r'Субъект.*?: (.+?)\n.*?'
-                r'Серийный номер.*?: (0x\w+?)\n'
-                r'SHA1 отпечаток.*?(\w+?)\n.*?'
-                r'Идентификатор ключа.*?: (.+?)\n.*?'
-                r'Выдан.*?(\d.+?)UTC\n'
-                r'Истекает.*?(\d.+?)UTC',
-                output, re.MULTILINE + re.DOTALL)
-        elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
-            m = re.findall(
-                r'(\d+)-{7}\n'
-                r'Издатель.*?: (.+?)\n.*?'
-                r'Субъект.*?: (.+?)\n.*?'
-                r'Серийный номер.*?: (0x\w+?)\n'
-                r'Хэш SHA1.*?(\w+?)\n.*?'
-                r'Идентификатор ключа.*?: (.+?)\n.*?'
-                r'Выдан.*?(\d.+?)UTC\n'
-                r'Истекает.*?(\d.+?)UTC',
-                output, re.MULTILINE + re.DOTALL)
-        elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
-            m = re.findall(
-                r'(\d+)-{7}\n'
-                r'Issuer.*?: (.+?)\n.*?'
-                r'Subject.*?: (.+?)\n.*?'
-                r'Serial.*?: (0x\w+?)\n'
-                r'SHA1 Hash.*?(\w+?)\n.*?'
-                r'SubjKeyID.*?: (.+?)\n.*?'
-                r'Not valid before.*?(\d.+?)UTC\n'
-                r'Not valid after.*?(\d.+?)UTC',
-                output, re.MULTILINE + re.DOTALL)
-        elif versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9971"):
-            m = re.findall(
-                r'(\d+)-{7}\n'
-                r'Издатель.*?: (.+?)\n.*?'
-                r'Субъект.*?: (.+?)\n.*?'
-                r'Серийный номер.*?: (0x\w+?)\n'
-                r'Хэш SHA1.*?(\w+?)\n.*?'
-                r'Идентификатор ключа.*?: (.+?)\n.*?'
-                r'Выдан.*?(\d.+?)UTC\n'
-                r'Истекает.*?(\d.+?)UTC',
-                output, re.MULTILINE + re.DOTALL)
-        else:
-            m = re.findall(
-                r'(\d+)-{7}\n'
-                r'Issuer.*?: (.+?)\n.*?'
-                r'Subject.*?: (.+?)\n.*?'
-                r'Serial.*?: (0x\w+?)\n'
-                r'SHA1 Hash.*?(\w+?)\n.*?'
-                r'SubjKeyID.*?: (.+?)\n.*?'
-                r'Not valid before.*?(\d.+?)UTC\n'
-                r'Not valid after.*?(\d.+?)UTC',
-                output, re.MULTILINE + re.DOTALL)
+        m = []
+        all_certs = create_certs_dict(output)
+        counter = 1
+        for single_cert in all_certs:
+            single_cert_dict = create_single_cert_dict(all_certs[single_cert])
+            cert_keys = list(single_cert_dict.keys())
+            issuerKey = list(filter(lambda v: re.match(r'Issuer|Издатель', v), cert_keys))
+            subjectKey = list(filter(lambda v: re.match(r'Subject|Субъект', v), cert_keys))
+            SerialKey = list(filter(lambda v: re.match(r'Serial|Серийный номер', v), cert_keys))
+            SHA1Key = list(filter(lambda v: re.match(r'SHA1 Hash|Хэш SHA1|SHA1 отпечаток', v), cert_keys))
+            SubjKeyID = list(filter(lambda v: re.match(r'SubjKeyID|Идентификатор ключа', v), cert_keys))
+            BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан', v), cert_keys))
+            AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
+            part = (f"{counter}",
+                    single_cert_dict[issuerKey[0]],
+                    single_cert_dict[subjectKey[0]],
+                    single_cert_dict[SerialKey[0]],
+                    single_cert_dict[SHA1Key[0]],
+                    single_cert_dict[SubjKeyID[0]],
+                    re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
+                    re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
+                    )
+            counter += 1
+            m.append(part)
     else:
         if versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9708"):
             certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-store', store],
@@ -659,275 +614,38 @@ def get_store_certs(store):
             certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-verbose', '-store', store],
                                        stdout=subprocess.PIPE)
         output = certmgr.communicate()[0].decode('utf-8')
-        if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
-            lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
-            m = []
-            counter = 1
-            for i in range(1, len(lists), 2):
-                lists[i] = f"{counter}-------\n" + lists[i]
-                if 'Назначение/EKU' in lists[i]:
-                    part1 = re.findall(
-                        r'(\d+)-{7}\n'
-                        r'Издатель.*?: (.+?)\n.*?'
-                        r'Субъект.*?: (.+?)\n.*?'
-                        r'Серийный номер.*?: (0x\w+?)\n'
-                        r'SHA1 отпечаток.*?(\w+?)\n.*?'
-                        r'Идентификатор ключа.*?: (.+?)\n.*?'
-                        r'Выдан.*?(\d.+?)UTC\n'
-                        r'Истекает.*?(\d.+?)UTC.+?',
-                        lists[i], re.MULTILINE + re.DOTALL)
-                    part1 = list(part1[0])
-                    part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
-                    part2 = [x for x in part2 if x != ''][0]
-                    if re.findall(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL):
-                        part2 = re.split(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL)
-                        part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
-                    else:
-                        part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-
-                    for j in range(0, len(part2)):
-                        part2[j] = re.sub('\n', '', part2[j])
-                        part2[j] = part2[j].strip()
-                    part1.append(part2)
-                    certs_UC_str = ""
-                    certs_CDP_str = ""
-                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
-                    part1.append(certs_UC_str)
-                    part1.append(certs_CDP_str)
-                    m.append(part1)
-                else:
-                    lists[i] = re.findall(
-                        r'(\d+)-{7}\n'
-                        r'Издатель.*?: (.+?)\n.*?'
-                        r'Субъект.*?: (.+?)\n.*?'
-                        r'Серийный номер.*?: (0x\w+?)\n'
-                        r'SHA1 отпечаток.*?(\w+?)\n.*?'
-                        r'Идентификатор ключа.*?: (.+?)\n.*?'
-                        r'Выдан.*?(\d.+?)UTC\n'
-                        r'Истекает.*?(\d.+?)UTC.+?\n',
-                        lists[i], re.MULTILINE + re.DOTALL)
-                    part1 = list(lists[i][0])
-                    certs_UC_str = ""
-                    certs_CDP_str = ""
-                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i][0][0])
-                    part1.append(certs_UC_str)
-                    part1.append(certs_CDP_str)
-                    m.append(part1)
-                counter += 1
-        elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
-            lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
-            m = []
-            counter = 1
-            for i in range(1, len(lists), 2):
-                lists[i] = f"{counter}-------\n" + lists[i]
-                if 'Назначение/EKU' in lists[i]:
-                    part1 = re.findall(
-                        r'(\d+)-{7}\nИздатель.*?: (.+?)\n.*?'
-                        r'Субъект.*?: (.+?)\n.*?'
-                        r'Серийный номер.*?: (0x\w+?)\n'
-                        r'Хэш SHA1.*?(\w+?)\n.*?'
-                        r'Идентификатор ключа.*?: (.+?)\n.*?'
-                        r'Выдан.*?(\d.+?)UTC\n'
-                        r'Истекает.*?(\d.+?)UTC.+?',
-                        lists[i],
-                        re.MULTILINE + re.DOTALL)
-                    part1 = list(part1[0])
-                    part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
-                    part2 = [x for x in part2 if x != ''][0]
-                    if re.findall(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL):
-                        part2 = re.split(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL)
-                        part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
-                    else:
-                        part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-
-                    for j in range(0, len(part2)):
-                        part2[j] = re.sub('\n', '', part2[j])
-                        part2[j] = part2[j].strip()
-                    part1.append(part2)
-                    certs_UC_str = ""
-                    certs_CDP_str = ""
-                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
-                    part1.append(certs_UC_str)
-                    part1.append(certs_CDP_str)
-                    m.append(part1)
-                else:
-                    lists[i] = re.findall(
-                        r'(\d+)-{7}\n'
-                        r'Издатель.*?: (.+?)\n.*?'
-                        r'Субъект.*?: (.+?)\n.*?'
-                        r'Серийный номер.*?: (0x\w+?)\n'
-                        r'Хэш SHA1.*?(\w+?)\n.*?'
-                        r'Идентификатор ключа.*?: (.+?)\n.*?'
-                        r'Выдан.*?(\d.+?)UTC\n'
-                        r'Истекает.*?(\d.+?)UTC.+?\n',
-                        output, re.MULTILINE + re.DOTALL)
-                    part1 = list(lists[i][0])
-                    certs_UC_str = ""
-                    certs_CDP_str = ""
-                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i][0][0])
-                    part1.append(certs_UC_str)
-                    part1.append(certs_CDP_str)
-                    m.append(part1)
-                counter += 1
-        elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
-            lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
-            m = []
-            counter = 1
-            for i in range(1, len(lists), 2):
-                lists[i] = f"{counter}-------\n" + lists[i]
-                if 'Extended Key Usage' in lists[i]:
-                    part1 = re.findall(
-                        r'(\d+)-{7}\n'
-                        r'Issuer.*?: (.+?)\n.*?'
-                        r'Subject.*?: (.+?)\n.*?'
-                        r'Serial.*?: (0x\w+?)\n'
-                        r'SHA1 Hash.*?(\w+?)\n.*?'
-                        r'SubjKeyID.*?: (.+?)\n.*?'
-                        r'Not valid before.*?(\d.+?)UTC\n'
-                        r'Not valid after.*?(\d.+?)UTC.+?\n',
-                        lists[i], re.MULTILINE + re.DOTALL)
-                    part1 = list(part1[0])
-                    part2 = re.split(r'Extended Key Usage', lists[i], re.MULTILINE + re.DOTALL)[1:]
-                    part2 = [x for x in part2 if x != ''][0]
-                    if re.findall(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL):
-                        part2 = re.split(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL)[:-1]
-                        part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
-                    else:
-                        part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                    for j in range(0, len(part2)):
-                        part2[j] = re.sub('\n', '', part2[j])
-                        part2[j] = part2[j].strip()
-                    part1.append(part2)
-                    certs_UC_str = ""
-                    certs_CDP_str = ""
-                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
-                    part1.append(certs_UC_str)
-                    part1.append(certs_CDP_str)
-                    m.append(part1)
-                else:
-                    lists[i] = re.findall(
-                        r'(\d+)-{7}\n'
-                        r'Issuer.*?: (.+?)\n.*?'
-                        r'Subject.*?: (.+?)\n.*?'
-                        r'Serial.*?: (0x\w+?)\n'
-                        r'SHA1 Hash.*?(\w+?)\n.*?'
-                        r'SubjKeyID.*?: (.+?)\n.*?'
-                        r'Not valid before.*?(\d.+?)UTC\n'
-                        r'Not valid after.*?(\d.+?)UTC.+?\n',
-                        lists[i], re.MULTILINE + re.DOTALL)
-                    part1 = list(lists[i][0])
-                    certs_UC_str = ""
-                    certs_CDP_str = ""
-                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i][0][0])
-                    part1.append(certs_UC_str)
-                    part1.append(certs_CDP_str)
-                    m.append(part1)
-                counter += 1
-        elif versiontuple("4.0.9971") <= versiontuple(get_cspversion()[2]) < versiontuple("5.0.10003"):
-            lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
-            m = []
-            counter = 1
-            for i in range(1, len(lists), 2):
-                lists[i] = f"{counter}-------\n" + lists[i]
-                if 'Назначение/EKU' in lists[i]:
-                    part1 = re.findall(
-                        r'(\d+)-{7}\n'
-                        r'Издатель.*?: (.+?)\n.*?'
-                        r'Субъект.*?: (.+?)\n.*?'
-                        r'Серийный номер.*?: (0x\w+?)\n'
-                        r'Хэш SHA1.*?(\w+?)\n.*?'
-                        r'Идентификатор ключа.*?: (.+?)\n.*?'
-                        r'Выдан.*?(\d.+?)UTC\n'
-                        r'Истекает.*?(\d.+?)UTC.+?\n',
-                        output, re.MULTILINE + re.DOTALL)
-                    part1 = list(part1[0])
-                    part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
-                    part2 = [x for x in part2 if x != ''][0]
-                    if re.findall(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL):
-                        part2 = re.split(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL)
-                        part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
-                    else:
-                        part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                    for i in range(0, len(part2)):
-                        part2[i] = re.sub('\n', '', part2[i])
-                        part2[i] = part2[i].strip()
-                    part1.append(part2)
-                    m.append(part1)
-                else:
-                    lists[i] = re.findall(
-                        r'(\d+)-{7}\n'
-                        r'Издатель.*?: (.+?)\n.*?'
-                        r'Субъект.*?: (.+?)\n.*?'
-                        r'Серийный номер.*?: (0x\w+?)\n'
-                        r'Хэш SHA1.*?(\w+?)\n.*?'
-                        r'Идентификатор ключа.*?: (.+?)\n.*?'
-                        r'Выдан.*?(\d.+?)UTC\n'
-                        r'Истекает.*?(\d.+?)UTC.+?\n',
-                        output, re.MULTILINE + re.DOTALL)
-                    part1 = list(lists[i][0])
-                    certs_UC_str = ""
-                    certs_CDP_str = ""
-                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i][0][0])
-                    part1.append(certs_UC_str)
-                    part1.append(certs_CDP_str)
-                    m.append(part1)
-                counter += 1
-        else:
-            lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
-            m = []
-            counter = 1
-            for i in range(1, len(lists), 2):
-                lists[i] = f"{counter}-------\n" + lists[i]
-                if 'Extended Key Usage' in lists[i]:
-                    part1 = re.findall(
-                        r'(\d+)-{7}\n'
-                        r'Issuer.*?: (.+?)\n.*?'
-                        r'Subject.*?: (.+?)\n.*?'
-                        r'Serial.*?: (0x\w+?)\n'
-                        r'SHA1 Hash.*?(\w+?)\n.*?'
-                        r'SubjKeyID.*?: (.+?)\n.*?'
-                        r'Not valid before.*?(\d.+?)UTC\n'
-                        r'Not valid after.*?(\d.+?)UTC.+?\n',
-                        lists[i], re.MULTILINE + re.DOTALL)
-
-                    part1 = list(part1[0])
-                    part2 = re.split(r'Extended Key Usage', lists[i], re.MULTILINE + re.DOTALL)[1:]
-                    part2 = [x for x in part2 if x != ''][0]
-                    if re.findall(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL):
-                        part2 = re.split(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL)[:-1]
-                        part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
-                    else:
-                        part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                    for j in range(0, len(part2)):
-                        part2[j] = re.sub('\n', '', part2[j])
-                        part2[j] = part2[j].strip()
-                    part1.append(part2)
-
-                    certs_UC_str = ""
-                    certs_CDP_str = ""
-                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
-                    part1.append(certs_UC_str)
-                    part1.append(certs_CDP_str)
-                    m.append(part1)
-                else:
-                    lists[i] = re.findall(
-                            r'(\d+)-{7}\n'
-                            r'Issuer.*?: (.+?)\n.*?'
-                            r'Subject.*?: (.+?)\n.*?'
-                            r'Serial.*?: (0x\w+?)\n'
-                            r'SHA1 Hash.*?(\w+?)\n.*?'
-                            r'SubjKeyID.*?: (.+?)\n.*?'
-                            r'Not valid before.*?(\d.+?)UTC\n'
-                            r'Not valid after.*?(\d.+?)UTC.+?\n',
-                            lists[i], re.MULTILINE + re.DOTALL)
-                    part1 = list(lists[i][0])
-                    certs_UC_str = ""
-                    certs_CDP_str = ""
-                    certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i][0][0])
-                    part1.append(certs_UC_str)
-                    part1.append(certs_CDP_str)
-                    m.append(part1)
-                counter += 1
+        m = []
+        all_certs = create_certs_dict(output)
+        counter = 1
+        for single_cert in all_certs:
+            single_cert_dict = create_single_cert_dict(all_certs[single_cert])
+            cert_keys = list(single_cert_dict.keys())
+            issuerKey = list(filter(lambda v: re.match(r'Issuer|Издатель', v), cert_keys))
+            subjectKey = list(filter(lambda v: re.match(r'Subject|Субъект', v), cert_keys))
+            SerialKey = list(filter(lambda v: re.match(r'Serial|Серийный номер', v), cert_keys))
+            SHA1Key = list(filter(lambda v: re.match(r'SHA1 Hash|Хэш SHA1|SHA1 отпечаток', v), cert_keys))
+            SubjKeyID = list(filter(lambda v: re.match(r'SubjKeyID|Идентификатор ключа', v), cert_keys))
+            BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан', v), cert_keys))
+            AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
+            ExtendedKey = list(filter(lambda v: re.match(r'Назначение/EKU|Extended Key Usage', v), cert_keys))
+            part1 = [f"{counter}",
+                     single_cert_dict[issuerKey[0]],
+                     single_cert_dict[subjectKey[0]],
+                     single_cert_dict[SerialKey[0]],
+                     single_cert_dict[SHA1Key[0]],
+                     single_cert_dict[SubjKeyID[0]],
+                     re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
+                     re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
+                     ]
+            if ExtendedKey:
+                part1.append(single_cert_dict[ExtendedKey[0]])
+            certs_UC_str = ""
+            certs_CDP_str = ""
+            certs_UC_str, certs_CDP_str = get_UC_CDP(all_certs[single_cert])
+            part1.append(certs_UC_str)
+            part1.append(certs_CDP_str)
+            m.append(part1)
+            counter += 1
     return m
 
 def install_CA_extra(url, root):
@@ -973,63 +691,61 @@ def install_CDP_extra(url, root):
 def list_crls():
     certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-crl', '-store', 'uRoot'],
                                stdout=subprocess.PIPE)
-    output = certmgr.communicate()[0]
-    if versiontuple(get_cspversion()[2]) > versiontuple("5.0.11455"):
-        m = re.findall(r'(\d+)-{7}.+?'
-                       r'CN=(.+?)[\n,].*?'
-                       r'Выпущен.+?: (\d.+?)UTC\n'
-                       r'Истекает.+?: (\d.+?)UTC',
-                       output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
-        m = re.findall(r'(\d+)-{7}.+?'
-                       r'CN=(.+?)[\n,].*?'
-                       r'ThisUpdate: (\d.+?)UTC\nNextUpdate: (\d.+?)UTC',
-                       output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    elif versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9971"):
-        m = re.findall(r'(\d+)-{7}.+?'
-                       r'CN=(.+?)[\n,].*?'
-                       r'Выпущен.+?: (\d.+?)UTC\n'
-                       r'Истекает.+?: (\d.+?)UTC',
-                       output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    else:
-        m = re.findall(r'(\d+)-{7}.+?'
-                       r'CN=(.+?)[\n,].*?'
-                       r'ThisUpdate: (\d.+?)UTC\n'
-                       r'NextUpdate: (\d.+?)UTC',
-                       output.decode('utf-8'), re.MULTILINE + re.DOTALL)
+    output = certmgr.communicate()[0].decode("utf-8")
+    m = []
+    all_certs = create_certs_dict(output)
+    counter = 1
+    for single_cert in all_certs:
+        single_cert_dict = create_single_cert_dict(all_certs[single_cert])
+        cert_keys = list(single_cert_dict.keys())
+        issuerKey = list(filter(lambda v: re.match(r'Issuer|Издатель', v), cert_keys))
+        BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан|Выпущен', v), cert_keys))
+        AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
+
+        issuerDN = create_dict_from_strk(single_cert_dict[issuerKey[0]])
+
+
+        part1 = [f"{counter}",
+                 issuerDN['CN'],
+                 re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
+                 re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
+                 ]
+        m.append(part1)
     return m
 
 
 def list_root_certs():
     certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-store', 'uRoot'],
                                stdout=subprocess.PIPE)
-    output = certmgr.communicate()[0]
-    if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
-        m = re.findall(
-            r'(\d+)-{7}\n'
-            r'Издатель.*?CN=(.+?)[\n,].*?'
-            r'Субъект.*?CN=(.+?)[\n,].*?'
-            r'Серийный номер.*?(0x.+?)\n'
-            r'SHA1 отпечаток.*?(.+?)\n.*?'
-            r'Выдан.*?(\d.+?)UTC\n'
-            r'Истекает.*?(\d.+?)UTC',
-            output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
-        m = re.findall(
-            r'(\d+)-{7}\nИздатель.*?CN=(.+?)[\n,].*?Субъект.*?CN=(.+?)[\n,].*?Серийный номер.*?(0x.+?)\nХэш SHA1.*?(.+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC',
-            output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
-        m = re.findall(
-            r'(\d+)-{7}\nIssuer.*?CN=(.+?)[\n,].*?Subject.*?CN=(.+?)[\n,].*?Serial.*?(0x.+?)\nSHA1 Hash.*?(.+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC',
-            output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    elif versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9971"):
-        m = re.findall(
-            r'(\d+)-{7}\nИздатель.*?CN=(.+?)[\n,].*?Субъект.*?CN=(.+?)[\n,].*?Серийный номер.*?(0x.+?)\nХэш SHA1.*?(.+?)\n.*?Выдан.*?(\d.+?)UTC\nИстекает.*?(\d.+?)UTC',
-            output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    else:
-        m = re.findall(
-            r'(\d+)-{7}\nIssuer.*?CN=(.+?)[\n,].*?Subject.*?CN=(.+?)[\n,].*?Serial.*?(0x.+?)\nSHA1 Hash.*?(.+?)\n.*?Not valid before.*?(\d.+?)UTC\nNot valid after.*?(\d.+?)UTC',
-            output.decode('utf-8'), re.MULTILINE + re.DOTALL)
+    output = certmgr.communicate()[0].decode("utf-8")
+    m = []
+    all_certs = create_certs_dict(output)
+    counter = 1
+    for single_cert in all_certs:
+        single_cert_dict = create_single_cert_dict(all_certs[single_cert])
+        cert_keys = list(single_cert_dict.keys())
+        issuerKey = list(filter(lambda v: re.match(r'Issuer|Издатель', v), cert_keys))
+        subjectKey = list(filter(lambda v: re.match(r'Subject|Субъект', v), cert_keys))
+        SerialKey = list(filter(lambda v: re.match(r'Serial|Серийный номер', v), cert_keys))
+        SHA1Key = list(filter(lambda v: re.match(r'SHA1 Hash|Хэш SHA1|SHA1 отпечаток', v), cert_keys))
+        BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан', v), cert_keys))
+        AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
+
+        issuerDN = create_dict_from_strk(single_cert_dict[issuerKey[0]])
+        subjectDN = create_dict_from_strk(single_cert_dict[subjectKey[0]])
+
+        # if
+        print(issuerDN, subjectDN)
+        part = (f"{counter}",
+                issuerDN['CN'].strip() if "CN" in list(issuerDN.keys()) else issuerDN['O'].strip(),
+                subjectDN['CN'].strip() if "CN" in list(subjectDN.keys()) else subjectDN['O'].strip(),
+                single_cert_dict[SerialKey[0]],
+                single_cert_dict[SHA1Key[0]],
+                re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
+                re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
+                )
+        counter += 1
+        m.append(part)
     return m
 
 
@@ -1105,250 +821,100 @@ def list_cert(cert):
         lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
         m = []
         counter = 1
-        for i in range(1, len(lists), 2):
-            lists[i] = f"{counter}-------\n" + lists[i]
-            if 'Назначение/EKU' in lists[i]:
-                part1 = re.findall(
-                    r'(\d+)-{7}\n'
-                    r'Издатель.*?: (.+?)\n.*?'
-                    r'Субъект.*?: (.+?)\n.*?'
-                    r'Серийный номер.*?: (0x\w+?)\n'
-                    r'SHA1 отпечаток.*?(\w+?)\n.*?'
-                    r'Идентификатор ключа.*?: (.+?)\n.*?'
-                    r'Выдан.*?(\d.+?)UTC\n'
-                    r'Истекает.*?(\d.+?)UTC.+?',
-                    lists[i], re.MULTILINE + re.DOTALL)
-                part1 = list(part1[0])
-                part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
-                part2 = [x for x in part2 if x != ''][0]
-                if re.findall(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL):
-                    part2 = re.split(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL)
-                    part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
-                else:
-                    part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-
-                for j in range(0, len(part2)):
-                    part2[j] = re.sub('\n', '', part2[j])
-                    part2[j] = part2[j].strip()
-                part1.append(part2)
-
-                certs_UC_str = ""
-                certs_CDP_str = ""
-                certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
-                part1.append(certs_UC_str)
-                part1.append(certs_CDP_str)
-                m.append(part1)
-            else:
-                lists[i] = re.findall(
-                    r'(\d+)-{7}\n'
-                    r'Издатель.*?: (.+?)\n.*?'
-                    r'Субъект.*?: (.+?)\n.*?'
-                    r'Серийный номер.*?: (0x\w+?)\n'
-                    r'SHA1 отпечаток.*?(\w+?)\n.*?'
-                    r'Идентификатор ключа.*?: (.+?)\n.*?'
-                    r'Выдан.*?(\d.+?)UTC\n'
-                    r'Истекает.*?(\d.+?)UTC.+?\n',
-                    lists[i], re.MULTILINE + re.DOTALL)
-                m.append(lists[i][0])
-            counter += 1
-    elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
-        lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
         m = []
+        all_certs = create_certs_dict(output)
         counter = 1
-        for i in range(1, len(lists), 2):
-            lists[i] = f"{counter}-------\n" + lists[i]
-            if 'Назначение/EKU' in lists[i]:
-                part1 = re.findall(
-                    r'(\d+)-{7}\n'
-                    r'Издатель.*?: (.+?)\n.*?'
-                    r'Субъект.*?: (.+?)\n.*?'
-                    r'Серийный номер.*?: (0x\w+?)\n'
-                    r'Хэш SHA1.*?(\w+?)\n.*?'
-                    r'Идентификатор ключа.*?: (.+?)\n.*?'
-                    r'Выдан.*?(\d.+?)UTC\n'
-                    r'Истекает.*?(\d.+?)UTC.+?', lists[i],
-                    re.MULTILINE + re.DOTALL)
-                part1 = list(part1[0])
-                part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
-                part2 = [x for x in part2 if x != ''][0]
-                if re.findall(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL):
-                    part2 = re.split(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL)
-                    part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
-                else:
-                    part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-
-                for j in range(0, len(part2)):
-                    part2[j] = re.sub('\n', '', part2[j])
-                    part2[j] = part2[j].strip()
-                part1.append(part2)
-
-                certs_UC_str = ""
-                certs_CDP_str = ""
-                certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
-                part1.append(certs_UC_str)
-                part1.append(certs_CDP_str)
-                m.append(part1)
-            else:
-                lists[i] = re.findall(
-                    r'(\d+)-{7}\n'
-                    r'Издатель.*?: (.+?)\n.*?'
-                    r'Субъект.*?: (.+?)\n.*?'
-                    r'Серийный номер.*?: (0x\w+?)\n'
-                    r'Хэш SHA1.*?(\w+?)\n.*?'
-                    r'Идентификатор ключа.*?: (.+?)\n.*?'
-                    r'Выдан.*?(\d.+?)UTC\n'
-                    r'Истекает.*?(\d.+?)UTC.+?\n',
-                    output, re.MULTILINE + re.DOTALL)
-                m.append(lists[i][0])
-            counter += 1
-    elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
-        lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
-        m = []
-        counter = 1
-        for i in range(1, len(lists), 2):
-            lists[i] = f"{counter}-------\n" + lists[i]
-            if 'Extended Key Usage' in lists[i]:
-                part1 = re.findall(
-                    r'(\d+)-{7}\n'
-                    r'Issuer.*?: (.+?)\n.*?'
-                    r'Subject.*?: (.+?)\n.*?'
-                    r'Serial.*?: (0x\w+?)\n'
-                    r'SHA1 Hash.*?(\w+?)\n.*?'
-                    r'SubjKeyID.*?: (.+?)\n.*?'
-                    r'Not valid before.*?(\d.+?)UTC\n'
-                    r'Not valid after.*?(\d.+?)UTC.+?\n',
-                    lists[i], re.MULTILINE + re.DOTALL)
-                part1 = list(part1[0])
-                part2 = re.split(r'Extended Key Usage', lists[i], re.MULTILINE + re.DOTALL)[1:]
-                part2 = [x for x in part2 if x != ''][0]
-                if re.findall(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL):
-                    part2 = re.split(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL)[:-1]
-                    part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
-                else:
-                    part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                for j in range(0, len(part2)):
-                    part2[j] = re.sub('\n', '', part2[j])
-                    part2[j] = part2[j].strip()
-                part1.append(part2)
-
-                certs_UC_str = ""
-                certs_CDP_str = ""
-                certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
-                part1.append(certs_UC_str)
-                part1.append(certs_CDP_str)
-                m.append(part1)
-            else:
-                lists[i] = re.findall(
-                    r'(\d+)-{7}\n'
-                    r'Issuer.*?: (.+?)\n.*?'
-                    r'Subject.*?: (.+?)\n.*?'
-                    r'Serial.*?: (0x\w+?)\n'
-                    r'SHA1 Hash.*?(\w+?)\n.*?'
-                    r'SubjKeyID.*?: (.+?)\n.*?'
-                    r'Not valid before.*?(\d.+?)UTC\n'
-                    r'Not valid after.*?(\d.+?)UTC.+?\n',
-                    lists[i], re.MULTILINE + re.DOTALL)
-                m.append(lists[i][0])
-            counter += 1
-    elif versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9971"):
-        lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
-        m = []
-        counter = 1
-        for i in range(1, len(lists), 2):
-            lists[i] = f"{counter}-------\n" + lists[i]
-            if 'Назначение/EKU' in lists[i]:
-                part1 = re.findall(
-                    r'(\d+)-{7}\n'
-                    r'Издатель.*?: (.+?)\n.*?'
-                    r'Субъект.*?: (.+?)\n.*?'
-                    r'Серийный номер.*?: (0x\w+?)\n'
-                    r'Хэш SHA1.*?(\w+?)\n.*?'
-                    r'Идентификатор ключа.*?: (.+?)\n.*?'
-                    r'Выдан.*?(\d.+?)UTC\n'
-                    r'Истекает.*?(\d.+?)UTC.+?\n',
-                    output, re.MULTILINE + re.DOTALL)
-                part1 = list(part1[0])
-                part2 = re.split(r'Назначение\/EKU', lists[i], re.MULTILINE + re.DOTALL)[1:]
-                part2 = [x for x in part2 if x != ''][0]
-                if re.findall(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL):
-                    part2 = re.split(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL)
-                    part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
-                else:
-                    part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                for j in range(0, len(part2)):
-                    part2[j] = re.sub('\n', '', part2[j])
-                    part2[j] = part2[j].strip()
-                part1.append(part2)
-
-                certs_UC_str = ""
-                certs_CDP_str = ""
-                certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
-                part1.append(certs_UC_str)
-                part1.append(certs_CDP_str)
-                m.append(part1)
-            else:
-                lists[i] = re.findall(
-                    r'(\d+)-{7}\n'
-                    r'Издатель.*?: (.+?)\n.*?'
-                    r'Субъект.*?: (.+?)\n.*?'
-                    r'Серийный номер.*?: (0x\w+?)\n'
-                    r'Хэш SHA1.*?(\w+?)\n.*?'
-                    r'Идентификатор ключа.*?: (.+?)\n.*?'
-                    r'Выдан.*?(\d.+?)UTC\n'
-                    r'Истекает.*?(\d.+?)UTC.+?\n',
-                    output, re.MULTILINE + re.DOTALL)
-                m.append(lists[i][0])
-            counter += 1
-    else:
-        lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
-        m = []
-        counter = 1
-        for i in range(1, len(lists), 2):
-            lists[i] = f"{counter}-------\n" + lists[i]
-            if 'Extended Key Usage' in lists[i]:
-                part1 = re.findall(
-                    r'(\d+)-{7}\n'
-                    r'Issuer.*?: (.+?)\n.*?'
-                    r'Subject.*?: (.+?)\n.*?'
-                    r'Serial.*?: (0x\w+?)\n'
-                    r'SHA1 Hash.*?(\w+?)\n.*?'
-                    r'SubjKeyID.*?: (.+?)\n.*?'
-                    r'Not valid before.*?(\d.+?)UTC\n'
-                    r'Not valid after.*?(\d.+?)UTC.+?\n',
-                    lists[i], re.MULTILINE + re.DOTALL)
-                part1 = list(part1[0])
-                part2 = re.split(r'Extended Key Usage', lists[i], re.MULTILINE + re.DOTALL)[1:]
-                part2 = [x for x in part2 if x != ''][0]
-                if re.findall(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL):
-                    part2 = re.split(r'\n\=*\n', part2, re.MULTILINE + re.DOTALL)[:-1]
-                    part2 = re.findall(r'[\d+\.]+', part2[0], re.MULTILINE + re.DOTALL)
-                else:
-                    part2 = re.findall(r'[\d+\.]+', part2, re.MULTILINE + re.DOTALL)
-                for j in range(0, len(part2)):
-                    part2[j] = re.sub('\n', '', part2[j])
-                    part2[j] = part2[j].strip()
-                part1.append(part2)
-
-                certs_UC_str = ""
-                certs_CDP_str = ""
-                certs_UC_str, certs_CDP_str = get_UC_CDP(lists[i])
-                part1.append(certs_UC_str)
-                part1.append(certs_CDP_str)
-                m.append(part1)
-            else:
-                lists[i] = re.findall(
-                    r'(\d+)-{7}\n'
-                    r'Issuer.*?: (.+?)\n.*?'
-                    r'Subject.*?: (.+?)\n.*?'
-                    r'Serial.*?: (0x\w+?)\n'
-                    r'SHA1 Hash.*?(\w+?)\n.*?'
-                    r'SubjKeyID.*?: (.+?)\n.*?'
-                    r'Not valid before.*?(\d.+?)UTC\n'
-                    r'Not valid after.*?(\d.+?)UTC.+?\n',
-                    lists[i], re.MULTILINE + re.DOTALL)
-                m.append(lists[i][0])
+        for single_cert in all_certs:
+            single_cert_dict = create_single_cert_dict(all_certs[single_cert])
+            cert_keys = list(single_cert_dict.keys())
+            issuerKey = list(filter(lambda v: re.match(r'Issuer|Издатель', v), cert_keys))
+            subjectKey = list(filter(lambda v: re.match(r'Subject|Субъект', v), cert_keys))
+            SerialKey = list(filter(lambda v: re.match(r'Serial|Серийный номер', v), cert_keys))
+            SHA1Key = list(filter(lambda v: re.match(r'SHA1 Hash|Хэш SHA1|SHA1 отпечаток', v), cert_keys))
+            SubjKeyID = list(filter(lambda v: re.match(r'SubjKeyID|Идентификатор ключа', v), cert_keys))
+            BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан', v), cert_keys))
+            AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
+            ExtendedKey = list(filter(lambda v: re.match(r'Назначение/EKU|Extended Key Usage', v), cert_keys))
+            part1 = [f"{counter}",
+                     single_cert_dict[issuerKey[0]],
+                     single_cert_dict[subjectKey[0]],
+                     single_cert_dict[SerialKey[0]],
+                     single_cert_dict[SHA1Key[0]],
+                     single_cert_dict[SubjKeyID[0]],
+                     re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
+                     re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
+                     ]
+            if ExtendedKey:
+                part1.append(single_cert_dict[ExtendedKey[0]])
+            certs_UC_str = ""
+            certs_CDP_str = ""
+            certs_UC_str, certs_CDP_str = get_UC_CDP(all_certs[single_cert])
+            part1.append(certs_UC_str)
+            part1.append(certs_CDP_str)
+            m.append(part1)
             counter += 1
     return m
+
+def create_certs_dict(strk):
+    strk_keys = re.findall(r"\d+-{7}\n", strk.strip(), re.MULTILINE + re.DOTALL)
+    strk_list = re.split('\d+\-{7}\n', strk.strip())[1:]
+    new_dict = {}
+    counter_keys = 0
+    for i in range(0, len(strk_list)):
+        temp_str = strk_list[i].strip()
+        new_dict[strk_keys[counter_keys]] = temp_str if i != len(strk_list) - 1 else re.split("==.*\n", temp_str)[0]
+        counter_keys += 1
+    return new_dict
+
+
+def create_single_cert_dict(strk):
+    if re.findall(r'(Назначение/EKU|Extended Key Usage)', strk.strip(), re.MULTILINE + re.DOTALL):
+        parts = re.split(r'(Назначение/EKU|Extended Key Usage)', strk.strip(), re.MULTILINE + re.DOTALL)
+        strk_keys1 = re.findall("^([A-Za-zА-Яа-я0-9 ]+?)\:", parts[0], re.MULTILINE + re.DOTALL)
+        strk_rows = re.findall(r'^([A-Za-zА-Яа-я0-9 ]+?)\:(.+?)[\n].*?', parts[0], re.MULTILINE + re.DOTALL)
+        keys_dict_count = {i[0].strip(): strk_keys1.count(i[0]) for i in strk_rows}
+        new_dict = {}
+        for k in keys_dict_count:
+            new_dict[k] = [] if keys_dict_count[k] > 1 else ""
+        for el in strk_rows:
+            el0 = el[0].strip()
+            if type(new_dict[el0]) is str:
+                new_dict[el0] = el[1]
+            elif type(new_dict[el0]) is list:
+                new_dict[el0].append(el[1])
+        strk_keys2 = parts[1]
+        strk_rows2 = parts[2]
+        strk_rows2 = re.sub(":", "", strk_rows2.strip()).split("\n")
+        new_dict[strk_keys2] = []
+        for k in strk_rows2:
+            new_dict[strk_keys2].append(k.strip())
+    else:
+        strk_rows = re.findall(r'^([A-Za-zА-Яа-я0-9 ]+?)\:(.+?)[\n].*?', strk.strip(), re.MULTILINE + re.DOTALL)
+        strk_keys = re.findall("^([A-Za-zА-Яа-я0-9 ]+?)\:", strk.strip(), re.MULTILINE + re.DOTALL)
+        keys_dict_count = {i[0].strip(): strk_keys.count(i[0]) for i in strk_rows}
+        new_dict = {}
+        for k in keys_dict_count:
+            new_dict[k] = [] if keys_dict_count[k] > 1 else ""
+        for el in strk_rows:
+            el0 = el[0].strip()
+            if type(new_dict[el0]) is str:
+                new_dict[el0] = el[1]
+            elif type(new_dict[el0]) is list:
+                new_dict[el0].append(el[1])
+    return new_dict
+
+
+def create_dict_from_strk(strk):
+    strk_keys = re.findall("([A-Za-z0-9\.]+?)=", strk.strip())
+
+    strk_list = re.split("([A-Za-z0-9\.]+?)=", strk.strip())[1:]
+    new_dict = {}
+    counter_keys = 0
+    for i in range(1, len(strk_list), 2):
+        temp_str = strk_list[i].strip()
+        new_dict[strk_keys[counter_keys]] = temp_str[:-1] if "," == temp_str[-1] else temp_str
+        counter_keys += 1
+    return new_dict
 
 
 if len(sys.argv) == 2 and sys.argv[1] == "--debug-output":
@@ -1598,6 +1164,7 @@ class TokenUI:
                 self.treeview_cert_col.set_title(text)
                 # self.asReader.set_sensitive(True)
                 self.token = temp[1]
+                print(self.token)
                 certs = get_token_certs(str(self.token))[0]
                 counter = 0
                 for cert in certs:
@@ -1795,9 +1362,10 @@ class TokenUI:
 
         else:
             cert_info = get_store_certs(self.store)
-
+            print(cert_info)
             cert_index = model.get_value(iter, 0)
             line = cert_info[int(cert_index) - 1]
+            print(line)
         if line:
             cert_view = ViewCert()
             model = Gtk.ListStore(str, Gdk.RGBA)
@@ -2599,10 +2167,10 @@ class ListCert(Gtk.Window):
                 if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
                     text2 = _("SHA1 fingerprint")
 
-                    item = (f"'{text1}: {line[3]}\n{text2}: {line[4]}\n{text3}: {date1}\n{text4}: {date2}'")
+                    item = (f"{text1}: {line[3]}\n{text2}: {line[4]}\n{text3}: {date1}\n{text4}: {date2}")
                 else:
                     text2 = _("SHA1 hash")
-                    item = (f"'{text1}: {line[3]}\n{text2}: {line[4]}\n{text3}: {date1}\n{text4}: {date2}'")
+                    item = (f"{text1}: {line[3]}\n{text2}: {line[4]}\n{text3}: {date1}\n{text4}: {date2}")
                 self.token_list.append([line[1], line[2], item, color])
         else:
             self.set_default_size(800, 343)
