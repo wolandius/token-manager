@@ -1,3 +1,10 @@
+v5.2.1 May 03 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:-1
+- fix gtk24 version in GLADE for RED OS7.2
+
+v5.2 Apr 20 2023
+- replace regex parse in certs view with new dictionary funcs
+- added full support for languages in appimage mode
+
 v5.1 Apr 07 2023
 - improved certs parse logic in select_token function
 

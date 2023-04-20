@@ -3,7 +3,7 @@
 #
 
 Name:           token-manager
-Version:        5.1
+Version:        5.2.1
 Release:        1%{dist}.2
 
 BuildArch:      noarch
@@ -61,6 +61,8 @@ python3 setup.py install --single-version-externally-managed --root=$RPM_BUILD_R
 
 %post
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}.desktop
+sed -i 's|version="3.24"|version="3.22"|g'  %{_datadir}/token_manager/ui/token_manager.glade
+sed -i 's|version="3.24"|version="3.22"|g'  %{_datadir}/token_manager/ui/templates.glade
 
 %posttrans
 VERSION=%{version}
@@ -89,6 +91,14 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Wed May 03 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:5.2.1-1
+- fix gtk24 version in GLADE for RED OS7.2
+
+* Thu Apr 20 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:5.2-1
+- replace regex parse in certs view with new dictionary funcs
+- added full support for languages in appimage mode
+
+
 * Fri Apr 07 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:5.1-1
 - improved certs parse logic in select_token function
 
