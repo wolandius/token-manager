@@ -421,57 +421,37 @@ def install_root_cert(file, root):
         certmgr = subprocess.Popen(
             [f'pkexec /opt/cprocsp/bin/{arch}/certmgr -inst -store {root} -file "{file}"'],
             stdout=subprocess.PIPE, shell=True)
-    output = certmgr.communicate()[0]
-    if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
-        m = re.findall(
-            r'(\d+)-{7}\n'
-            r'Издатель.*?'
-            r'CN=(.+?)[\n,].*?'
-            r'Субъект.*?CN=(.+?)[\n,].*?'
-            r'Серийный номер.*?(0x.+?)\n'
-            r'SHA1 отпечаток.*?(.+?)\n.*?'
-            r'Выдан.*?(\d.+?)UTC\n'
-            r'Истекает.*?(\d.+?)UTC',
-            output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    elif versiontuple("5.0.11455") < versiontuple(get_cspversion()[2]) < versiontuple("5.0.12000"):
-        m = re.findall(
-            r'(\d+)-{7}\nИздатель.*?CN=(.+?)[\n,].*?'
-            r'Субъект.*?CN=(.+?)[\n,].*?'
-            r'Серийный номер.*?(0x.+?)\n'
-            r'Хэш SHA1.*?(.+?)\n.*?'
-            r'Выдан.*?(\d.+?)UTC\n'
-            r'Истекает.*?(\d.+?)UTC',
-            output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
-        m = re.findall(
-            r'(\d+)-{7}\n'
-            r'Issuer.*?CN=(.+?)[\n,].*?'
-            r'Subject.*?CN=(.+?)[\n,].*?'
-            r'Serial.*?(0x.+?)\n'
-            r'SHA1 Hash.*?(.+?)\n.*?'
-            r'Not valid before.*?(\d.+?)UTC\n'
-            r'Not valid after.*?(\d.+?)UTC',
-            output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    elif versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9971"):
-        m = re.findall(
-            r'(\d+)-{7}\n'
-            r'Издатель.*?CN=(.+?)[\n,].*?'
-            r'Субъект.*?CN=(.+?)[\n,].*?'
-            r'Серийный номер.*?(0x.+?)\n'
-            r'Хэш SHA1.*?(.+?)\n.*?'
-            r'Выдан.*?(\d.+?)UTC\n'
-            r'Истекает.*?(\d.+?)UTC',
-            output.decode('utf-8'), re.MULTILINE + re.DOTALL)
-    else:
-        m = re.findall(
-            r'(\d+)-{7}\n'
-            r'Issuer.*?CN=(.+?)[\n,].*?'
-            r'Subject.*?CN=(.+?)[\n,].*?'
-            r'Serial.*?(0x.+?)\n'
-            r'SHA1 Hash.*?(.+?)\n.*?'
-            r'Not valid before.*?(\d.+?)UTC\n'
-            r'Not valid after.*?(\d.+?)UTC',
-            output.decode('utf-8'), re.MULTILINE + re.DOTALL)
+    # output = certmgr.communicate()[0]
+
+    output = certmgr.communicate()[0].decode("utf-8")
+    m = []
+    all_certs = create_certs_dict(output)
+    counter = 1
+    for single_cert in all_certs:
+        single_cert_dict = create_single_cert_dict(all_certs[single_cert])
+        cert_keys = list(single_cert_dict.keys())
+        issuerKey = list(filter(lambda v: re.match(r'Issuer|Издатель', v), cert_keys))
+        subjectKey = list(filter(lambda v: re.match(r'Subject|Субъект', v), cert_keys))
+        SerialKey = list(filter(lambda v: re.match(r'Serial|Серийный номер', v), cert_keys))
+        SHA1Key = list(filter(lambda v: re.match(r'SHA1 Hash|Хэш SHA1|SHA1 отпечаток', v), cert_keys))
+        BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан', v), cert_keys))
+        AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
+
+        issuerDN = create_dict_from_strk(single_cert_dict[issuerKey[0]])
+        subjectDN = create_dict_from_strk(single_cert_dict[subjectKey[0]])
+
+        # if
+        print(issuerDN, subjectDN)
+        part = (f"{counter}",
+                issuerDN['CN'].strip() if "CN" in list(issuerDN.keys()) else issuerDN['O'].strip(),
+                subjectDN['CN'].strip() if "CN" in list(subjectDN.keys()) else subjectDN['O'].strip(),
+                single_cert_dict[SerialKey[0]],
+                single_cert_dict[SHA1Key[0]],
+                re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
+                re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
+                )
+        counter += 1
+        m.append(part)
     return m
 
 def install_crl(file, root):
@@ -483,35 +463,23 @@ def install_crl(file, root):
         certmgr = subprocess.Popen(
             [f'pkexec /opt/cprocsp/bin/{arch}/certmgr -inst -crl -store {root} -file "{file}"'],
             stdout=subprocess.PIPE, shell=True)
-    output = certmgr.communicate()[0]
-    if versiontuple(get_cspversion()[2]) > versiontuple("5.0.11455"):
-        m = re.findall(r'(\d+)-{7}.+?'
-                       r'CN=(.+?)[\n,].*?'
-                       r'Выпущен.*?: (\d.+?)UTC\n'
-                       r'Истекает.*?: (\d.+?)UTC',
-                       output.decode('utf-8'),
-                       re.MULTILINE + re.DOTALL)
-    elif versiontuple(get_cspversion()[2]) == versiontuple("5.0.11455"):
-        m = re.findall(r'(\d+)-{7}.+?'
-                       r'CN=(.+?)[\n,].*?'
-                       r'ThisUpdate: (\d.+?)UTC\n'
-                       r'NextUpdate: (\d.+?)UTC',
-                       output.decode('utf-8'),
-                       re.MULTILINE + re.DOTALL)
-    elif versiontuple(get_cspversion()[2]) >= versiontuple("4.0.9971"):
-        m = re.findall(r'(\d+)-{7}.+?'
-                       r'CN=(.+?)[\n,].*?'
-                       r'Выпущен.*?: (\d.+?)UTC\n'
-                       r'Истекает.*?: (\d.+?)UTC',
-                       output.decode('utf-8'),
-                       re.MULTILINE + re.DOTALL)
-    else:
-        m = re.findall(r'(\d+)-{7}.+?'
-                       r'CN=(.+?)[\n,].*?'
-                       r'ThisUpdate: (\d.+?)UTC\n'
-                       r'NextUpdate: (\d.+?)UTC',
-                       output.decode('utf-8'),
-                       re.MULTILINE + re.DOTALL)
+    output = certmgr.communicate()[0].decode("utf-8")
+    m = []
+    all_certs = create_certs_dict(output)
+    counter = 1
+    for single_cert in all_certs:
+        single_cert_dict = create_single_cert_dict(all_certs[single_cert])
+        cert_keys = list(single_cert_dict.keys())
+        issuerKey = list(filter(lambda v: re.match(r'Issuer|Издатель', v), cert_keys))
+        BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан|Выпущен', v), cert_keys))
+        AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
+        issuerDN = create_dict_from_strk(single_cert_dict[issuerKey[0]])
+        part1 = [f"{counter}",
+                 issuerDN['CN'],
+                 re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
+                 re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
+                 ]
+        m.append(part1)
     return m
 
 
@@ -704,7 +672,6 @@ def list_crls():
 
         issuerDN = create_dict_from_strk(single_cert_dict[issuerKey[0]])
 
-
         part1 = [f"{counter}",
                  issuerDN['CN'],
                  re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
@@ -734,7 +701,6 @@ def list_root_certs():
         issuerDN = create_dict_from_strk(single_cert_dict[issuerKey[0]])
         subjectDN = create_dict_from_strk(single_cert_dict[subjectKey[0]])
 
-        # if
         print(issuerDN, subjectDN)
         part = (f"{counter}",
                 issuerDN['CN'].strip() if "CN" in list(issuerDN.keys()) else issuerDN['O'].strip(),
