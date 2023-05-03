@@ -5,7 +5,13 @@ rm -rf ./sbin
 rm -rf ./usr
 rm -rf ./var
 
-dnf download opensc python3-chardet usermode xdg-utils realmd procps-ng wget polkit gtk3 glibc python3
+if [ ! -f "/usr/bin/dnf" ];
+then
+    yumdownloader opensc python3-chardet usermode xdg-utils realmd procps-ng wget polkit gtk3 glibc python3;
+else
+    dnf download opensc python3-chardet usermode xdg-utils realmd procps-ng wget polkit gtk3 glibc python3;
+fi
+
 rm -rf ./*.i686.rpm
 for f in ./*.rpm; do
   rpm2cpio "$f" | cpio -idmv
