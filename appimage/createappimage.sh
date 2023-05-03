@@ -23,10 +23,15 @@ ln -sf ./consolehelper ./cpconfig-amd64
 ln -sf ./consolehelper ./cpconfig-ia32
 popd
 
+if [ $1 = "72" ]; then
+   sed -i 's|version="3.24"|version="3.22"|g'  ./AppDir/usr/share/token_manager/ui/token_manager.glade;
+   sed -i 's|version="3.24"|version="3.22"|g'  ./AppDir/usr/share/token_manager/ui/templates.glade;
+fi
+
 chmod +x ./AppDir/token-manager.desktop
 chmod +x ./AppDir/AppRun
 chmod +x ./appimagetool
 ARCH=x86-64 ./appimagetool ./AppDir
 chmod +x ./Token_Manager-x86_64.AppImage
 mv Token_Manager-x86_64.AppImage token-manager-ro$1.AppImage
-./token-manager.AppImage
+./token-manager-ro$1.AppImage
