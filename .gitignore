@@ -3,5 +3,12 @@ rpmbuild.sh
 test.py
 .idea
 *.tar.gz
-appimage/*
+appimage/AppDir/*
+appimage/appimagetool
+appimage/token-manager-*
+appimage/redos_rpms/etc/*
+appimage/redos_rpms/lib64/*
+appimage/redos_rpms/sbin/*
+appimage/redos_rpms/usr/*
+appimage/redos_rpms/var/*
 src/*egg*
