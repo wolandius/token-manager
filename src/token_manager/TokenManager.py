@@ -49,7 +49,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from datetime import datetime
 
-VERSION = "5.2.1"
+VERSION = "5.2.2"
 
 GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
 appdir = os.popen("echo $APPDIR").readline().strip()
@@ -351,6 +351,7 @@ def del_cont(cert):
 
 
 def del_store_cert(store, certID):
+    certID = certID.strip()
     if store == 'uRoot':
         # try to find cert in mRoot at first
         certs = os.popen(f"/opt/cprocsp/bin/{arch}/certmgr -list -store mRoot | grep {certID}").readlines()
@@ -441,12 +442,11 @@ def install_root_cert(file, root):
         subjectDN = create_dict_from_strk(single_cert_dict[subjectKey[0]])
 
         # if
-        print(issuerDN, subjectDN)
         part = (f"{counter}",
                 issuerDN['CN'].strip() if "CN" in list(issuerDN.keys()) else issuerDN['O'].strip(),
                 subjectDN['CN'].strip() if "CN" in list(subjectDN.keys()) else subjectDN['O'].strip(),
-                single_cert_dict[SerialKey[0]],
-                single_cert_dict[SHA1Key[0]],
+                single_cert_dict[SerialKey[0]].strip(),
+                single_cert_dict[SHA1Key[0]].strip(),
                 re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
                 re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
                 )
@@ -475,7 +475,7 @@ def install_crl(file, root):
         AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
         issuerDN = create_dict_from_strk(single_cert_dict[issuerKey[0]])
         part1 = [f"{counter}",
-                 issuerDN['CN'],
+                 issuerDN['CN'].strip(),
                  re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
                  re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
                  ]
@@ -564,11 +564,11 @@ def get_store_certs(store):
             BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан', v), cert_keys))
             AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
             part = (f"{counter}",
-                    single_cert_dict[issuerKey[0]],
-                    single_cert_dict[subjectKey[0]],
-                    single_cert_dict[SerialKey[0]],
-                    single_cert_dict[SHA1Key[0]],
-                    single_cert_dict[SubjKeyID[0]],
+                    single_cert_dict[issuerKey[0]].strip(),
+                    single_cert_dict[subjectKey[0]].strip(),
+                    single_cert_dict[SerialKey[0]].strip(),
+                    single_cert_dict[SHA1Key[0]].strip(),
+                    single_cert_dict[SubjKeyID[0]].strip(),
                     re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
                     re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
                     )
@@ -597,11 +597,11 @@ def get_store_certs(store):
             AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
             ExtendedKey = list(filter(lambda v: re.match(r'Назначение/EKU|Extended Key Usage', v), cert_keys))
             part1 = [f"{counter}",
-                     single_cert_dict[issuerKey[0]],
-                     single_cert_dict[subjectKey[0]],
-                     single_cert_dict[SerialKey[0]],
-                     single_cert_dict[SHA1Key[0]],
-                     single_cert_dict[SubjKeyID[0]],
+                     single_cert_dict[issuerKey[0]].strip(),
+                     single_cert_dict[subjectKey[0]].strip(),
+                     single_cert_dict[SerialKey[0]].strip(),
+                     single_cert_dict[SHA1Key[0]].strip(),
+                     single_cert_dict[SubjKeyID[0]].strip(),
                      re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
                      re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
                      ]
@@ -673,7 +673,7 @@ def list_crls():
         issuerDN = create_dict_from_strk(single_cert_dict[issuerKey[0]])
 
         part1 = [f"{counter}",
-                 issuerDN['CN'],
+                 issuerDN['CN'].strip(),
                  re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
                  re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
                  ]
@@ -701,12 +701,11 @@ def list_root_certs():
         issuerDN = create_dict_from_strk(single_cert_dict[issuerKey[0]])
         subjectDN = create_dict_from_strk(single_cert_dict[subjectKey[0]])
 
-        print(issuerDN, subjectDN)
         part = (f"{counter}",
                 issuerDN['CN'].strip() if "CN" in list(issuerDN.keys()) else issuerDN['O'].strip(),
                 subjectDN['CN'].strip() if "CN" in list(subjectDN.keys()) else subjectDN['O'].strip(),
-                single_cert_dict[SerialKey[0]],
-                single_cert_dict[SHA1Key[0]],
+                single_cert_dict[SerialKey[0]].strip(),
+                single_cert_dict[SHA1Key[0]].strip(),
                 re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
                 re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
                 )
@@ -802,11 +801,11 @@ def list_cert(cert):
             AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
             ExtendedKey = list(filter(lambda v: re.match(r'Назначение/EKU|Extended Key Usage', v), cert_keys))
             part1 = [f"{counter}",
-                     single_cert_dict[issuerKey[0]],
-                     single_cert_dict[subjectKey[0]],
-                     single_cert_dict[SerialKey[0]],
-                     single_cert_dict[SHA1Key[0]],
-                     single_cert_dict[SubjKeyID[0]],
+                     single_cert_dict[issuerKey[0]].strip(),
+                     single_cert_dict[subjectKey[0]].strip(),
+                     single_cert_dict[SerialKey[0]].strip(),
+                     single_cert_dict[SHA1Key[0]].strip(),
+                     single_cert_dict[SubjKeyID[0]].strip(),
                      re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
                      re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
                      ]
@@ -1270,6 +1269,7 @@ class TokenUI:
                 self.cert_install.set_sensitive(False)
         else:
             if self.info_class.delete_from_nonToken() == Gtk.ResponseType.OK:
+                print(self.store, self.certID)
                 ret = del_store_cert(self.store, self.certID)
                 if ret == u"Сертификат успешно удален":
                     text = _("Certificate removed successfully")

@@ -3,8 +3,12 @@
 #
 
 Name:           token-manager
-Version:        5.2.1
+Version:        5.2.2
+%if 0%{?redos_version} < 0730
+Release:        1%{dist}.2
+%else
 Release:        1%{dist}.3
+%endif
 
 BuildArch:      noarch
 
@@ -46,6 +50,7 @@ Requires:       %{name}
 
 %prep
 %setup -q
+
 rm -rf %{name}.egg-info
 
 %build
@@ -57,31 +62,35 @@ mkdir -p %{buildroot}/%{_bindir}
 ln -sf /usr/bin/consolehelper %{buildroot}%{_bindir}/cpconfig-amd64
 ln -sf /usr/bin/consolehelper %{buildroot}%{_bindir}/cpconfig-ia32
 
-python3 setup.py install --single-version-externally-managed --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
+python3 setup.py install --single-version-externally-managed --root=%{buildroot} --record=INSTALLED_FILES
+
+%if 0%{?redos_version} < 0730
+sed -i 's|version="3.24"|version="3.22"|g' %{buildroot}%{_datadir}/token_manager/ui/token_manager.glade
+sed -i 's|version="3.24"|version="3.22"|g' %{buildroot}%{_datadir}/token_manager/ui/templates.glade
+%endif
 
 %post
 xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}.desktop
 
+%post ia32
+xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.desktop
 
 %posttrans
 VERSION=%{version}
 for f in /usr/lib/python3*/site-packages/token_manager*egg*;
 do
-  if [ -d "$f" ] && [ "$f" != "/usr/lib/python3"*"/site-packages/token_manager-$VERSION"* ]; then
-    rm -rf $f ;
-  fi;
+    if [ -d "${f}" ] && [ "${f}" != "/usr/lib/python3"*"/site-packages/token_manager-${VERSION}"* ]; then
+        rm -rf ${f};
+    fi;
 done
-
-%post ia32
-xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.desktop
 
 %files -f INSTALLED_FILES
 %license LICENSE.md
 %doc README.md Changelog
 %{_bindir}/cpconfig-amd64
 %exclude %{_datadir}/applications/%{name}-ia32.desktop
-%exclude  %{_sysconfdir}/pam.d/cpconfig-ia32
-%exclude  /usr/lib/python3*/site-packages/token_manager/*/*.pyc
+%exclude %{_sysconfdir}/pam.d/cpconfig-ia32
+%exclude /usr/lib/python3*/site-packages/token_manager/*/*.pyc
 
 %files ia32
 %{_bindir}/cpconfig-ia32
@@ -89,6 +98,9 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Mon May 29 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:5.2.2-1
+- improve certificate parcing logic in single_cert_dict function
+
 * Wed May 03 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:5.2.1-1
 - fix gtk24 version in GLADE for RED OS7.2
 
@@ -104,6 +116,12 @@ xdg-desktop-menu install --mode system %{_datadir}/applications/%{name}-ia32.des
 - added translate files
 - added ask_about_extras dialog
 - fix rules error with extra certs wget
+
+* Tue Mar 07 2023 Alexey Rodionov <alexey.rodionov@red-soft.ru> - 0:4.2-2
+- fix problems with update package over old .egg-info dirs
+
+* Mon Feb 27 2023 Alexey Rodionov <alexey.rodionov@red-soft.ru> - 0:4.2-1
+- fix policy file name and action_ids
 
 * Thu Feb 02 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:4.2-1
 - added compitibility with appimage format

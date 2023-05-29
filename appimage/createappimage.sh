@@ -8,11 +8,14 @@ mkdir -p ./AppDir
 cd ..
 python3 ./setup.py install --root=./appimage/AppDir --prefix=usr
 cd appimage
+VERSION=$(sed 's|\"||'g <<< $(sed 's|VERSION = \"||'g <<< $(cat /home/wolandius/git_projects/token-manager/src/token_manager/TokenManager.py | grep 'VERSION =')))
+
 
 cp AppRun ./AppDir/
 cp ../data/token-manager.desktop ./AppDir/
 cp ../data/token-manager.png ./AppDir/
 pushd ./redos_rpms
+bash ./get_binaries.sh
 cp -r ./usr ../AppDir/
 cp -r ./etc ../AppDir/
 cp -r ./var ../AppDir/
@@ -33,5 +36,5 @@ chmod +x ./AppDir/AppRun
 chmod +x ./appimagetool
 ARCH=x86-64 ./appimagetool ./AppDir
 chmod +x ./Token_Manager-x86_64.AppImage
-mv Token_Manager-x86_64.AppImage token-manager-ro$1.AppImage
-./token-manager-ro$1.AppImage
+mv Token_Manager-x86_64.AppImage token-manager-$VERSION-ro$1-x86_64.AppImage
+./token-manager-$VERSION-ro$1-x86_64.AppImage

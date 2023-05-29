@@ -1,4 +1,7 @@
-v5.2.1 May 03 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:-1
+v5.2.2 May 29 2023
+- improve certificate parcing logic in single_cert_dict function
+
+v5.2.1 May 03 2023
 - fix gtk24 version in GLADE for RED OS7.2
 
 v5.2 Apr 20 2023
