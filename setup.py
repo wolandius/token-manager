@@ -9,7 +9,7 @@ long_description = (here / "README.md").read_text(encoding="utf-8")
 
 setup(
     name='token_manager',
-    version="5.2.1",
+    version="5.2.2",
     description="Certificate manager for CryptoPro CSP",
     long_description=long_description,
     long_description_content_type="text/markdown",
