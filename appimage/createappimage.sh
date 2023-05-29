@@ -29,6 +29,7 @@ popd
 if [ $1 = "72" ]; then
    sed -i 's|version="3.24"|version="3.22"|g'  ./AppDir/usr/share/token_manager/ui/token_manager.glade;
    sed -i 's|version="3.24"|version="3.22"|g'  ./AppDir/usr/share/token_manager/ui/templates.glade;
+   sed -i 's|python3.8|python3.6|g' ./AppDir/AppRun;
 fi
 
 chmod +x ./AppDir/token-manager.desktop
