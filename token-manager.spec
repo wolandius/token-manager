@@ -3,7 +3,7 @@
 #
 
 Name:           token-manager
-Version:        5.2.2
+Version:        5.2.3
 %if 0%{?redos_version} < 0730
 Release:        1%{dist}.2
 %else
@@ -98,6 +98,9 @@ done
 %{_datadir}/applications/%{name}-ia32.desktop
 
 %changelog
+* Mon Jun 19 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:5.2.3-1
+- improve certificate parcing logic in list_cert function for cryptopro 4
+
 * Mon May 29 2023 Vladlen Murylyov <vladlen.murylyov@red-soft.ru> - 0:5.2.2-1
 - improve certificate parcing logic in single_cert_dict function
 

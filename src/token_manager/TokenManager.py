@@ -49,7 +49,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from datetime import datetime
 
-VERSION = "5.2.2"
+VERSION = "5.2.3"
 
 GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
 appdir = os.popen("echo $APPDIR").readline().strip()
@@ -782,42 +782,42 @@ def list_cert(cert):
         certmgr = subprocess.Popen(['/opt/cprocsp/bin/%s/certmgr' % arch, '-list', '-verbose', '-cont', cert],
                                    stdout=subprocess.PIPE)
     output = certmgr.communicate()[0].decode("utf-8")
-    if versiontuple(get_cspversion()[2]) >= versiontuple("5.0.12000"):
-        lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
-        m = []
-        counter = 1
-        m = []
-        all_certs = create_certs_dict(output)
-        counter = 1
-        for single_cert in all_certs:
-            single_cert_dict = create_single_cert_dict(all_certs[single_cert])
-            cert_keys = list(single_cert_dict.keys())
-            issuerKey = list(filter(lambda v: re.match(r'Issuer|Издатель', v), cert_keys))
-            subjectKey = list(filter(lambda v: re.match(r'Subject|Субъект', v), cert_keys))
-            SerialKey = list(filter(lambda v: re.match(r'Serial|Серийный номер', v), cert_keys))
-            SHA1Key = list(filter(lambda v: re.match(r'SHA1 Hash|Хэш SHA1|SHA1 отпечаток', v), cert_keys))
-            SubjKeyID = list(filter(lambda v: re.match(r'SubjKeyID|Идентификатор ключа', v), cert_keys))
-            BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан', v), cert_keys))
-            AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
-            ExtendedKey = list(filter(lambda v: re.match(r'Назначение/EKU|Extended Key Usage', v), cert_keys))
-            part1 = [f"{counter}",
-                     single_cert_dict[issuerKey[0]].strip(),
-                     single_cert_dict[subjectKey[0]].strip(),
-                     single_cert_dict[SerialKey[0]].strip(),
-                     single_cert_dict[SHA1Key[0]].strip(),
-                     single_cert_dict[SubjKeyID[0]].strip(),
-                     re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
-                     re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
-                     ]
-            if ExtendedKey:
-                part1.append(single_cert_dict[ExtendedKey[0]])
-            certs_UC_str = ""
-            certs_CDP_str = ""
-            certs_UC_str, certs_CDP_str = get_UC_CDP(all_certs[single_cert])
-            part1.append(certs_UC_str)
-            part1.append(certs_CDP_str)
-            m.append(part1)
-            counter += 1
+    lists = re.split(r'(\d+)-{7}\n', output, re.MULTILINE + re.DOTALL)[1:]
+    m = []
+    counter = 1
+    m = []
+    all_certs = create_certs_dict(output)
+    counter = 1
+    for single_cert in all_certs:
+        single_cert_dict = create_single_cert_dict(all_certs[single_cert])
+        cert_keys = list(single_cert_dict.keys())
+        issuerKey = list(filter(lambda v: re.match(r'Issuer|Издатель', v), cert_keys))
+        subjectKey = list(filter(lambda v: re.match(r'Subject|Субъект', v), cert_keys))
+        SerialKey = list(filter(lambda v: re.match(r'Serial|Серийный номер', v), cert_keys))
+        SHA1Key = list(filter(lambda v: re.match(r'SHA1 Hash|Хэш SHA1|SHA1 отпечаток', v), cert_keys))
+        SubjKeyID = list(filter(lambda v: re.match(r'SubjKeyID|Идентификатор ключа', v), cert_keys))
+        BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан', v), cert_keys))
+        AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
+        ExtendedKey = list(filter(lambda v: re.match(r'Назначение/EKU|Extended Key Usage', v), cert_keys))
+        part1 = [f"{counter}",
+                 single_cert_dict[issuerKey[0]].strip(),
+                 single_cert_dict[subjectKey[0]].strip(),
+                 single_cert_dict[SerialKey[0]].strip(),
+                 single_cert_dict[SHA1Key[0]].strip(),
+                 single_cert_dict[SubjKeyID[0]].strip(),
+                 re.sub("UTC", "", single_cert_dict[BeforeKey[0]]).strip() + " ",
+                 re.sub("UTC", "", single_cert_dict[AfterKey[0]]).strip() + " ",
+                 ]
+        if ExtendedKey:
+            part1.append(single_cert_dict[ExtendedKey[0]])
+        certs_UC_str = ""
+        certs_CDP_str = ""
+        certs_UC_str, certs_CDP_str = get_UC_CDP(all_certs[single_cert])
+        part1.append(certs_UC_str)
+        part1.append(certs_CDP_str)
+        m.append(part1)
+        counter += 1
+
     return m
 
 def create_certs_dict(strk):
