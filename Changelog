@@ -1,3 +1,6 @@
+v5.2.3 Jun 19 2023
+- improve certificate parcing logic in list_cert function for cryptopro 4
+
 v5.2.2 May 29 2023
 - improve certificate parcing logic in single_cert_dict function
 
