@@ -49,7 +49,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf
 from datetime import datetime
 
-VERSION = "5.2.3"
+VERSION = "5.3"
 
 GUI_USERS = os.popen("w | grep -c xdm").readline().strip()
 appdir = os.popen("echo $APPDIR").readline().strip()
@@ -471,8 +471,8 @@ def install_crl(file, root):
         single_cert_dict = create_single_cert_dict(all_certs[single_cert])
         cert_keys = list(single_cert_dict.keys())
         issuerKey = list(filter(lambda v: re.match(r'Issuer|Издатель', v), cert_keys))
-        BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан|Выпущен', v), cert_keys))
-        AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает', v), cert_keys))
+        BeforeKey = list(filter(lambda v: re.match(r'Not valid before|Выдан|Выпущен|ThisUpdate', v), cert_keys))
+        AfterKey = list(filter(lambda v: re.match(r'Not valid after|Истекает|NextUpdate', v), cert_keys))
         issuerDN = create_dict_from_strk(single_cert_dict[issuerKey[0]])
         part1 = [f"{counter}",
                  issuerDN['CN'].strip(),
@@ -719,7 +719,10 @@ def get_first_part_certs():
     csptest = subprocess.Popen(['/opt/cprocsp/bin/%s/csptest' % arch, '-keyset', '-enum_cont', '-unique', '-fqcn',
                                 '-verifyc'], stdout=subprocess.PIPE)
     try:
-        if versiontuple(get_cspversion()[2]) <= versiontuple("5.0.11455"):
+        if versiontuple(get_cspversion()[2]) == versiontuple("4.0.9975"):
+            output = csptest.communicate()[0].decode("utf-8")
+            return [csptest, output]
+        elif versiontuple(get_cspversion()[2]) <= versiontuple("5.0.11455"):
             output = csptest.communicate()[0].decode('cp1251').encode('utf-8').decode("utf-8")
             return [csptest, output]
         else:
@@ -2922,7 +2925,7 @@ class InfoClass(Gtk.Window):
                                             if CA_LIST_STR != "":
 
                                                 for ca in CA_LIST_STR.split("\n"):
-                                                    out = install_CA_extra(ca)
+                                                    out = install_CA_extra(ca, "uRoot")
                                                     success_ca.append(out[0]) if out[1] == 0 else errors_ca.append(out[0])
                                                     time.sleep(2)
                                             if CDP_LIST_STR != "":
@@ -2930,7 +2933,7 @@ class InfoClass(Gtk.Window):
                                                     strk_out += "\n"
 
                                                 for cdp in CDP_LIST_STR.split("\n"):
-                                                    out = install_CDP_extra(cdp)
+                                                    out = install_CDP_extra(cdp, "uRoot")
                                                     success_cdp.append(out[0]) if out[1] == 0 else errors_cdp.append(out[0])
                                                     time.sleep(2)
                                             if len(success_ca) > 0:
