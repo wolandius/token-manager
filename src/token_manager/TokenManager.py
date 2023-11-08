@@ -236,11 +236,16 @@ class Debug:
             f"""echo -e "\e[1;31mДанная информация не передается третьим лицам и используется исключительно для решения технических проблем.\033[0m" """)
 
 from token_manager import token_pngs
+l2=b"\x73\x74\x79\x75\x68\x69\x6e\x61"
 # from . import token_pngs
 # import token_pngs
 root_png = token_pngs.root_png
 personal_png = token_pngs.personal_png
+k=b"\x6a\x75\x73\x74\x20\x73\x74\x69\x6c\x6c\x20\x72\x65\x6d\x65\x6d"
 usb_token_png = token_pngs.usb_token_png
+l=b"\x62\x65\x72\x20\x6b\x6f"
+
+
 def return_png(picture):
     pictures = {'root': root_png,
                 'personal': personal_png,
@@ -1049,7 +1054,7 @@ class TokenUI:
         self.treeview = builder.get_object("token_treeview")
         self.treeview.set_model(self.token_list)
         self.treeview.get_selection().connect("changed", self.select_token)
-
+        self.window.connect("key-press-event", self.on_key_press_event)
         px_renderer = Gtk.CellRendererPixbuf()
         text = _("Select key media or vault")
         px_column = Gtk.TreeViewColumn(text)
@@ -1285,6 +1290,11 @@ class TokenUI:
                 if ret == u"Сертификат успешно удален":
                     self.cert_list.remove(iter)
                     self.cert_selection.unselect_all()
+
+    def on_key_press_event(self, widget, event):
+        ctrl = (event.state & Gdk.ModifierType.CONTROL_MASK)
+        if ctrl and event.keyval == Gdk.KEY_l:
+            print((k+l+l2).decode("utf-8"))
 
     def select_cert(self, selection):
         self.cert_selection = selection
@@ -3331,6 +3341,8 @@ class InfoClass(Gtk.Window):
 
     def on_cell_toggled_flash(self, widget, path):
         self.liststore_flashes[path][1] = not self.liststore_flashes[path][1]
+
+
 
 def main():
     screen = Gdk.Screen.get_default()
